@@ -1,0 +1,286 @@
+# This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
+models:
+  - name: shopify_user_id_stitcher
+    model_type: id_stitcher
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: user
+      main_id_type: main_id
+      edge_sources:
+        - inputs/rsIdentifies
+        - inputs/rsTracks
+        - inputs/rsPages
+        - inputs/rsOrderCreated
+        - inputs/rsOrderCancelled
+        - inputs/rsCartUpdate
+        - inputs/rsCartCreate
+   
+# Remove the section below, if you don't want to generate a feature table
+  - name: shopify_user_features
+    model_type: feature_table_model
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: user
+      vars:
+        - entityvar:
+            name: max_timestamp_tracks
+            select: max(timestamp)
+            from: inputs/rsTracks
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC'))
+
+        - entityvar:
+            name: max_timestamp_pages
+            select: max(timestamp)
+            from: inputs/rsPages
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC'))
+
+
+        - entityvar:
+            name: max_timestamp_bw_tracks_pages
+            select: CASE WHEN max_timestamp_tracks>=max_timestamp_pages THEN max_timestamp_tracks ELSE max_timestamp_pages END
+        #days since last seen
+        - entityvar:
+            name: days_since_last_seen
+            select: datediff(day, date(max_timestamp_bw_tracks_pages),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+#       #Churn features
+        - entityvar:
+            name: is_churned_1_days
+            select: case when days_since_last_seen > 1 then 1 else 0 end
+        - entityvar:
+            name: is_churned_7_days
+            select: case when days_since_last_seen > 7 then 1 else 0 end
+        
+        #days since last cart add
+        - entityvar:
+            name: max_timestamp_cart_update
+            select: max(timestamp)
+            from: inputs/rsCartUpdate
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC'))
+        
+        - entityvar:
+            name: max_timestamp_cart_create
+            select: max(timestamp)
+            from: inputs/rsCartCreate
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC'))
+
+        - entityvar:
+            name: max_timestamp_bw_cart_create_update
+            select: CASE WHEN max_timestamp_cart_update>=max_timestamp_cart_create THEN max_timestamp_cart_update ELSE max_timestamp_cart_create end
+       
+        - entityvar:
+            name: days_since_last_cart_add
+            select: datediff(day, date(max_timestamp_bw_cart_create_update), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+       
+        #total refund
+        - entityvar:
+            name: total_refund
+            select: sum(total_price_usd ::real)
+            from: inputs/rsOrderCancelled
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('ad32204fca182b862a5f97a5534c03a2','76e084771e78c194efd0e2d5b8920bea')
+
+        #refund count
+        - entityvar:
+            name: refund_count
+            select: count(*)
+            from: inputs/rsOrderCancelled
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('ad32204fca182b862a5f97a5534c03a2','76e084771e78c194efd0e2d5b8920bea')
+
+#     #days since last purchase
+        
+#         - entityvar:
+#             name: max_timestamp_order_created
+#             select: max(timestamp)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp'))}} and {{main_id}} is not null
+        
+#         - entityvar:
+#             name: days_since_last_purchase
+#             select: datediff(day, date(max_timestamp_order_created), date({{get_end_timestamp()}}))
+#     #days since first purchase
+
+#         - entityvar:
+#             name: min_timestamp_order_created
+#             select: min(timestamp)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp'))}} and {{main_id}} is not null
+
+#         - entityvar:
+#             name: days_since_first_purchase
+#             select: datediff(day, date(min_timestamp_order_created), date({{get_end_timestamp()}}))
+
+#     #has credit card
+#         - entityvar:
+#             name: has_credit_card
+#             select: max(case when lower({{ var('col_shopify_order_created_payment_method') }}) in {{var('card_types')}} then 1 else 0 end)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp')))}} and {{main_id}} is not null
+#     #avg_units_per_transaction
+#         - entityvar:
+#             name: avg_units_per_transaction
+#             select: avg({{ array_size (  var('col_shopify_order_created_products') )}}::real)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp')))}} and {{main_id}} is not null
+#     #avg_transaction_value
+#         - entityvar:
+#             name: avg_transaction_value
+#             select: avg({{ var('col_shopify_order_created_total_price') }}::real)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp')))}} and {{main_id}} is not null
+#     #highest_transaction_value
+#         - entityvar:
+#             name: highest_transaction_value
+#             select: max({{ var('col_shopify_order_created_total_price') }}::real)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp')))}} and {{main_id}} is not null
+#     #median_transaction_value   
+#         - entityvar:
+#             name: median_transaction_value
+#             select: median({{ var('col_shopify_order_created_total_price') }}::real)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp')))}} and {{main_id}} is not null
+#     #total_transactions
+#         - entityvar:
+#             name: total_transactions
+#             select: count(*)
+#             from: inputs/rsOrderCreated
+#             where: {{timebound(var('col_shopify_order_created_timestamp')))}} and {{main_id}} is not null
+#     #total_refund_in_past_1_days
+#         - entityvar:
+#             name: total_refund_in_past_1_days
+#             select: sum({{ var('col_shopify_orders_cancelled_total_price') }}::real)
+#             from: inputs/rsOrderCancelled
+#             where: datediff(day,date({{ var('col_shopify_orders_cancelled_timestamp') }}),date({{ get_end_timestamp() }}))<=1
+#             and {{ timebound(var('col_shopify_orders_cancelled_timestamp')) }}
+#             and {{var('col_shopify_orders_cancelled_financial_status')}} in ('refunded','partially_refunded')
+#     #total_refund_in_past_7_days
+#             and {{ var('main_id') }} is not null
+#         - entityvar:
+#             name: total_refund_in_past_7_days
+#             select: sum({{ var('col_shopify_orders_cancelled_total_price') }}::real)
+#             from: inputs/rsOrderCancelled
+#             where: datediff(day,date({{ var('col_shopify_orders_cancelled_timestamp') }}),date({{ get_end_timestamp() }}))<=7
+#             and {{ timebound(var('col_shopify_orders_cancelled_timestamp')) }}
+#             and {{var('col_shopify_orders_cancelled_financial_status')}} in ('refunded','partially_refunded')
+#             and {{ var('main_id') }} is not null
+#         - entityvar:
+#             name: recent_timestamp
+#             select: max({{ var('col_shopify_identifies_timestamp') }})
+#             from: inputs/rsIdentifies
+        
+#         - inputvar:
+#             name: email
+#             select: first_value({{var('col_shopify_identifies_email')}})
+#             from: inputs/identifies
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_email')}} is not null and {{var('col_shopify_identifies_email')}}!=''
+
+#         - inputvar:
+#             name: email_domain
+#             from: inputs/identifies
+#             select: first_value({{get_domain_from_email( var('col_shopify_identifies_email') )}} )
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_email')}} is not null and {{var('col_shopify_identifies_email')}}!=''
+        
+#         - entityvar:
+#             name: days_since_account_creation
+#             select: least(date(getdate()), {{ get_end_date()}}) - date(min({{ var('col_shopify_identifies_timestamp')}} ))
+#             from: inputs/rsIdentifies
+
+#         - entityvar:
+#             name: has_mobile_app
+#             select: max(case when lower({{ var('col_shopify_identifies_device_type')}}) in ('android', 'ios') then 1 else 0 end)
+#             from: inputs/rsIdentifies
+
+#         - inputvar:
+#             name: state
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_state') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_state')}} is not null and {{var('col_shopify_identifies_state')}}!=''
+
+#         - inputvar:
+#             name: country
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_country') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_country')}} is not null and {{var('col_shopify_identifies_country ')}}!=''
+
+
+#         - inputvar:
+#             name: first_name
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_first_name') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_first_name')}} is not null and {{var('col_shopify_identifies_first_name ')}}!=''
+#         - inputvar:
+#             name: last_name
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_last_name') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_last_name')}} is not null and {{var('col_shopify_identifies_last_name')}}!=''
+#         - inputvar:
+#             name: currency
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_currency') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_currency')}} is not null and {{var('col_shopify_identifies_currency')}}!=''
+
+#         - inputvar:
+#             name: device_name
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_device_name') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_device_name')}} is not null and {{var('col_shopify_identifies_device_name')}}!=''
+#         - inputvar:
+#             name: device_type
+#             from: inputs/identifies
+#             select: first_value({{ var('col_shopify_identifies_device_type') }})
+#             window:
+#               order_by: 
+#               - timestamp desc
+#             where: {{var('col_shopify_identifies_device_type')}} is not null and {{var('col_shopify_identifies_device_type')}}!=''
+        
+#         - entityvar:
+#             name: campaign_sources
+#             select: {{ array_agg( var('col_shopify_identifies_campaign_source') )}}
+#             from: inputs/rsIdentifies
+#             where: {{timebound( var('col_shopify_identifies_timestamp'))}} is not null
+
+     
+        
+
+        
+       
+      features:
+        - days_since_last_seen
+        - is_churned_1_days
+        - is_churned_7_days
+        - days_since_last_cart_add
+        - total_refund
+        - refund_count
+#         - days_since_last_purchase
+#         - days_since_first_purchase
+#         - has_credit_card
+#         - avg_units_per_transaction
+#         - avg_transaction_value
+#         - highest_transaction_value
+#         - median_transaction_value
+#         - total_transactions
+#         - total_refund_in_past_1_days
+#         - total_refund_in_past_7_days

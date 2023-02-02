@@ -1,0 +1,46 @@
+macros:
+  - name: array_agg
+    inputs:
+      - column_name
+    value: "array_agg( distinct {{column_name}})"
+  - name: array_size
+    inputs:
+      - column_name
+    value: "array_size( parse_json({{column_name}}) )"
+  - name: frame_clause  
+    
+    value: "frame_condition = 'rows between unbounded preceding and unbounded following')"
+  - name: get_age_from_dob
+    inputs:
+      - birthday_col
+    value: "CASE WHEN getdate() < {{ get_end_date() }}
+      THEN
+      (CASE WHEN dateadd(year, datediff (year, {{birthday_col}}, getdate()), {{birthday_col}}) > getdate()
+            THEN datediff(year, {{birthday_col}}, getdate()) - 1
+            ELSE datediff(year, {{birthday_col}}, getdate())
+      END)
+      ELSE
+      (CASE WHEN dateadd(year, datediff (year, {{birthday_col}}, {{ get_end_date() }}), {{birthday_col}}) > {{ get_end_date() }}
+            THEN datediff(year, {{birthday_col}}, {{ get_end_date() }}) - 1
+            ELSE datediff(year, {{birthday_col}}, {{ get_end_date() }})
+      END)
+      END"
+  - name: get_domain_from_email
+    inputs:
+      - email_col
+    value: "lower(split_part({{email_col}}, '@', 2))"
+  - name: id_stitch
+    inputs:
+      - TABLE_NAME
+      - list_id_cols
+      - timestamp_col=''
+    value: "array_size( parse_json({{column_name}}) )"
+  - name: lag_col
+    inputs:
+      - column_name
+    value: "lag({{column_name}}, 1, {{column_name}}))"
+  - name: timebound
+    inputs:
+      - column_name
+    value: "{{column_name}} between to_date('2015-01-01', 'YYYY-MM-DD') and getdate()"
+  
