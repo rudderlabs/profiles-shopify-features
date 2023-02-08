@@ -54,14 +54,14 @@ group by other_id_type;
 ## Know More
 See <a href="https://rudderlabs.github.io/pywht">public docs</a> for more information on using PB.
 
-How to Use
-There are a few views in the views/ directory. They are supposed to be created in the warehouse before the project is run. Each sql file in the views directory correspond to one view. Run them in the same schema where your input tables exist.
+
+There are a few views in the ```views/``` directory. They are supposed to be created in the warehouse before the project is run. Each sql file in the views directory correspond to one view. Run them in the same schema where your input tables exist.
 
 1. Install Profiles tool, from the link above
 2. Setup connection to your warehouse, following the instructions from the documentation
 3. cd to this directory where the git repo is cloned
-4. Do pb run
-Following features get created in the table shopify_user_features in the schema specified in pb connection (in step 2 above)
+4. Do ```pb run```
+Following features get created in the table ```shopify_user_features``` in the schema specified in pb connection (in step 2 above)
 
 ## Working features
 - days_since_last_seen
