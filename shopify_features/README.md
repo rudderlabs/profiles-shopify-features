@@ -56,3 +56,61 @@ group by other_id_type;
 
 ## Know More
 See <a href="https://rudderlabs.github.io/pywht">public docs</a> for more information on using PB.
+
+
+There are a few views in the ```views/``` directory. They are supposed to be created in the warehouse before the project is run. Each sql file in the views directory correspond to one view. Run them in the same schema where your input tables exist.
+
+1. Install Profiles tool, from the link above
+2. Setup connection to your warehouse, following the instructions from the documentation
+3. cd to this directory where the git repo is cloned
+4. Do ```pb run```
+Following features get created in the table ```shopify_user_features``` in the schema specified in pb connection (in step 2 above)
+
+## Working features
+- days_since_last_seen
+- is_churned_1_days
+- is_churned_7_days
+- days_since_last_cart_add
+- total_refund
+- refund_count
+- days_since_last_purchase
+- days_since_first_purchase
+- has_credit_card
+- avg_units_per_transaction
+- avg_transaction_value
+- highest_transaction_value
+- median_transaction_value
+- total_transactions
+- total_refund_in_past_1_days
+- total_refund_in_past_7_days
+- email_id
+- days_since_account_creation
+- has_mobile_app
+- state
+- country
+- first_name
+- last_name
+- currency
+- device_type
+ - device_name
+ - campaign_sources
+ - is_active_on_website
+- device_manufacturer
+ - active_days_in_past_1_days
+- active_days_in_past_7_days
+- active_days_in_past_365_days
+ - total_sessions_till_date
+ - total_sessions_last_week
+- avg_session_length_overall
+ - avg_session_length_last_week
+  - first_seen_date
+- last_seen_date
+- carts_in_past_1_days
+- carts_in_past_7_days
+- carts_in_past_365_days
+ - total_carts
+ - last_transaction_value
+- total_products_added
+- products_added_in_past_1_days
+- products_added_in_past_365_days
+
