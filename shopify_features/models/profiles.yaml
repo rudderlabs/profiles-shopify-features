@@ -80,14 +80,14 @@ models:
             name: total_refund
             select: sum(total_price_usd ::real)
             from: inputs/rsOrderCancelled
-            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('ad32204fca182b862a5f97a5534c03a2','76e084771e78c194efd0e2d5b8920bea')
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('paid','refunded','partially_refunded')
 
         #refund count
         - entityvar:
             name: refund_count
             select: count(*)
             from: inputs/rsOrderCancelled
-            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('ad32204fca182b862a5f97a5534c03a2','76e084771e78c194efd0e2d5b8920bea')
+            where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('paid','refunded','partially_refunded')
 
     #days since last purchase
         
@@ -115,7 +115,7 @@ models:
     #has credit card
         - entityvar:
             name: has_credit_card
-            select: max(case when lower(payment_details_credit_card_company) in ('89fc0d6fe12b0e0c1af5c7a0373435a6','b48167465ffc278e8096a57fb3e5cf24') then 1 else 0 end)
+            select: max(case when lower(payment_details_credit_card_company) in ('Visa','American Express','Mastercard') then 1 else 0 end)
             from: inputs/rsOrderCreated
             where: timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC'))
 
@@ -154,13 +154,13 @@ models:
             name: total_refund_in_past_1_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=1 and timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('ad32204fca182b862a5f97a5534c03a2','76e084771e78c194efd0e2d5b8920bea')
+            where: datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=1 and timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('paid','refunded','partially_refunded')
     #total_refund_in_past_7_days
         - entityvar:
             name: total_refund_in_past_7_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=7 and timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('ad32204fca182b862a5f97a5534c03a2','76e084771e78c194efd0e2d5b8920bea')
+            where: datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=7 and timestamp<= to_timestamp_tz(replace('{{timestamp}}',' UTC')) and financial_status in ('paid','refunded','partially_refunded')
             
         - entityvar:
             name: recent_timestamp

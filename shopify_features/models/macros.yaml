@@ -29,19 +29,8 @@ macros:
   #   inputs:
   #     - email_col
     # value: "lower(split_part({{email_col}}, '@', 2))"
-  - name: id_stitch
-    inputs:
-      - TABLE_NAME
-      - list_id_cols
-      - timestamp_col=''
-    value: "array_size( parse_json({{column_name}}) )"
+
   - name: lag_col
     inputs:
       - column_name
     value: "lag({{column_name}}, 1, {{column_name}}))"
-  - name: timebound
-    inputs:
-      - column_name
-    value: "{{column_name}} between to_date('2015-01-01', 'YYYY-MM-DD') and getdate()"
-  - name: get_end_date
-    value: '{{ run_started_at.strftime("%Y-%m-%d") }}'
