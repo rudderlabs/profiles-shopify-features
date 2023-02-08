@@ -73,3 +73,35 @@ inputs:
       - select: "anonymous_id"
         type: anonymous_id
         entity: user
+  - name: rsTracksUnionPages
+    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS_UNION_PAGES
+    occurred_at_col: timestamp
+    ids:
+      - select: "user_id"
+        type: user_id
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+  - name: rsCartCreateUnionCartUpdate
+    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_CREATE_UNION_CART_UPDATE
+    occurred_at_col: timestamp
+    ids:
+      - select: "token"
+        type: cart_token
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+
+ 
+  - name: rsCART_LINE_ITEMS
+    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_LINE_ITEMS
+    occurred_at_col: timestamp
+    ids:
+      - select: "token"
+        type: cart_token
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
