@@ -46,9 +46,6 @@ models:
             select: datediff(day, date(max_timestamp_bw_tracks_pages),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
 #       #Churn features
         - entityvar:
-            name: is_churned_1_days
-            select: case when days_since_last_seen > 1 then 1 else 0 end
-        - entityvar:
             name: is_churned_7_days
             select: case when days_since_last_seen > 7 then 1 else 0 end
         
@@ -94,7 +91,8 @@ models:
         
         - entityvar:
             name: days_since_last_purchase
-            select: datediff(day, date(max_timestamp_order_created), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            #select: datediff(day, date(max_timestamp_order_created), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            select: datediff(day, date(max_timestamp_order_created), '{{timestamp}}')
     #days since first purchase
 
         - entityvar:
@@ -268,12 +266,6 @@ models:
               order_by: 
               - timestamp desc
             where: context_device_manufacturer is not null and context_device_manufacturer!='' 
-       
-        - entityvar:
-            name: active_days_in_past_1_days
-            select: count(distinct date(timestamp))
-            from: inputs/rsTracksUnionPages
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 1 
         
         - entityvar:
             name: active_days_in_past_7_days
@@ -325,14 +317,14 @@ models:
             where: context_session_id is not null and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 7
      
         - entityvar:
-            name: avg_session_length_overall
+            name: avg_session_length_in_sec_overall
             from: inputs/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: session_row_number = 1 and context_session_id is not null
 
 
         - entityvar:
-            name: avg_session_length_last_week
+            name: avg_session_length_in_sec_last_week
             from: inputs/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 7
@@ -416,7 +408,6 @@ models:
 
       features:
         - days_since_last_seen
-        - is_churned_1_days
         - is_churned_7_days
         - days_since_last_cart_add
         - total_refund
@@ -445,13 +436,12 @@ models:
         - campaign_sources
         - is_active_on_website
         - device_manufacturer
-        - active_days_in_past_1_days
         - active_days_in_past_7_days
         - active_days_in_past_365_days
         - total_sessions_till_date
         - total_sessions_last_week
-        - avg_session_length_overall
-        - avg_session_length_last_week
+        - avg_session_length_in_sec_overall
+        - avg_session_length_in_sec_last_week
         - first_seen_date
         - last_seen_date
         - carts_in_past_1_days

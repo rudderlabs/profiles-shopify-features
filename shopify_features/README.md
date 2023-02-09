@@ -68,7 +68,6 @@ Following features get created in the table ```shopify_user_features``` in the s
 
 ## Working features
 - days_since_last_seen
-- is_churned_1_days
 - is_churned_7_days
 - days_since_last_cart_add
 - total_refund
@@ -96,13 +95,12 @@ Following features get created in the table ```shopify_user_features``` in the s
  - campaign_sources
  - is_active_on_website
 - device_manufacturer
- - active_days_in_past_1_days
 - active_days_in_past_7_days
 - active_days_in_past_365_days
  - total_sessions_till_date
  - total_sessions_last_week
-- avg_session_length_overall
- - avg_session_length_last_week
+- avg_session_length_in_sec_overall
+ - avg_session_length_in_sec__last_week
   - first_seen_date
 - last_seen_date
 - carts_in_past_1_days
