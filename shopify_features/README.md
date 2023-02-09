@@ -110,4 +110,6 @@ Following features get created in the table ```shopify_user_features``` in the s
 - total_products_added
 - products_added_in_past_1_days
 - products_added_in_past_365_days
+- last_cart_value_in_dollars (does not consider if products are removed)
+
 
