@@ -66,53 +66,67 @@ There are a few views in the ```views/``` directory. They are supposed to be cre
 4. Do ```pb run```
 Following features get created in the table ```shopify_user_features``` in the schema specified in pb connection (in step 2 above)
 
-## Working features
-- days_since_last_seen
-- is_churned_1_days
-- is_churned_7_days
-- days_since_last_cart_add
-- total_refund
-- refund_count
-- days_since_last_purchase
-- days_since_first_purchase
-- has_credit_card
-- avg_units_per_transaction
-- avg_transaction_value
-- highest_transaction_value
-- median_transaction_value
-- total_transactions
-- total_refund_in_past_1_days
-- total_refund_in_past_7_days
-- email_id
-- days_since_account_creation
-- has_mobile_app
-- state
-- country
-- first_name
-- last_name
-- currency
-- device_type
- - device_name
- - campaign_sources
- - is_active_on_website
-- device_manufacturer
- - active_days_in_past_1_days
-- active_days_in_past_7_days
-- active_days_in_past_365_days
- - total_sessions_till_date
- - total_sessions_last_week
-- avg_session_length_overall
- - avg_session_length_last_week
-  - first_seen_date
-- last_seen_date
-- carts_in_past_1_days
-- carts_in_past_7_days
-- carts_in_past_365_days
- - total_carts
- - last_transaction_value
-- total_products_added
-- products_added_in_past_1_days
-- products_added_in_past_365_days
-- last_cart_value_in_dollars (does not consider if products are removed)
 
+## Working features
+        - days_since_last_seen(int): Derived from pages and tracks
+        - is_churned_7_days(bool): It specifies if there is any activity observed in the last n days. It is dependent on days_since_last_seen.)
+        - days_since_last_cart_add(int): Number of days since the user has added a product to cart
+        - total_refund(float): Total refund for a particular user till date. Derived from Ordercancelled table)
+        - refund_count(int): Total number of times an order has been cancelled by a user and has been refunded(Derived from ordercancelled table)
+        - days_since_last_purchase(int): Number of days since the user purchased the latest product(Derived from OrderCreated)
+        - days_since_first_purchase(int): Number of days since the user purchased the first product(Derived from OrderCreated)
+        - has_credit_card(bool) 
+        - avg_units_per_transaction(float): It shows the average units purchased in each transaction. (Total units in each transaction/Total transactions). Includes only those transactions where the total price (from column current_total_price) is greater than zero. So, the feature exclude transactions with 100% off, replacement products etc that may result in the total_price being equal to zero.(Derived from rsOrderCreated)
+        - avg_transaction_value(float): Total price in each transaction/Total number of transactions.(Derived from rsOrderCreated)
+        - highest_transaction_value(float): Of all the transactions done by the user, this features contains the highest transaction value.
+        - median_transaction_value(float): Median value of total price of all the transactions 
+        - total_transactions(int): Total number of transactions done by the user
+        - total_refund_in_past_1_days(float): Total refund for a particular user in last 1 day
+        - total_refund_in_past_7_days(float): Total refund for a particular user in last 7 day
+        - email_id(str): 
+        - days_since_account_creation(int)
+        - has_mobile_app(bool)
+        - state(Str)
+        - country(Str)
+        - first_name(str)
+        - last_name(Str)
+        - currency(str)
+        - device_type(str)
+        - device_name(str)
+        - campaign_sources(Array[str])
+        - is_active_on_website(bool)
+        - device_manufacturer(str)
+        - active_days_in_past_7_days(int): Derived from rsTracksUnionPages
+        - active_days_in_past_365_days(int): Derived from rsTracksUnionPages
+        - total_sessions_till_date(int)
+        - total_sessions_last_week(int)
+        - avg_session_length_in_sec_overall9(float)
+        - avg_session_length_in_sec_last_week(float)
+        - first_seen_date(str): The first date on which an event has been recorded by the user
+        - last_seen_date(str): The latest date on which an event has been recorded by the user
+        - carts_in_past_1_days(int): A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days(Derived from CartCreateand Union CartUpdate)
+        - carts_in_past_7_days(int): A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days(Derived from CartCreateand Union CartUpdate)
+        - carts_in_past_365_days(int):
+        A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days(Derived from CartCreateand Union CartUpdate)
+        - total_carts(int): Total carts created by the user till date. (Derived from CartCreateand Union CartUpdate)
+        - last_transaction_value(float)
+        - total_products_added(Array[str]):: Total products added till date. (array with list of all product ids)
+        - products_added_in_past_1_days(Array[str]): Products added by the user in last 1 days(Derived from rsCART_LINE_ITEMS)
+        - products_added_in_past_7_days(Array[str]): Products added by the user in last 7 days(Derived from rsCART_LINE_ITEMS)
+        - products_added_in_past_365_days(Array[str]): Products added by the user in last 365 days(Derived from rsCART_LINE_ITEMS)
+        - avg_session_length_1_days(float)
+        - avg_session_length_365_days(float)
+        - total_sessions_1_days(int)
+        - total_sessions_90_days(int)
+        - total_sessions_365_days(int)
+        - last_cart_status(bool): Derived from joining ORDER_CREATED and ORDER_CANCELLED table
+        - last_cart_value_in_dollars(float) (does not consider if products are removed)
+        - transactions_in_past_1_days(int)
+        - transactions_in_past_90_days(int)
+        - transactions_in_past_365_days(int)
+        - net_amt_spent_in_past_1_days(float) : (Sales-Refund) Derived from joining ORDER_CREATED and ORDER_CANCELLED table
+        - net_amt_spent_in_past_90_days(float) : (Sales-Refund) Derived from joining ORDER_CREATED and ORDER_CANCELLED table
+        - net_amt_spent_in_past_365_days(float) : (Sales-Refund)Derived from joining ORDER_CREATED and ORDER_CANCELLED table
+        - net_amt_spent_in_past(float) : Derived from joining ORDER_CREATED and ORDER_CANCELLED table
+        - gross_amt_spent_in_past(float) :Consider only sales. Derived from joining ORDER_CREATED and ORDER_CANCELLED table
 

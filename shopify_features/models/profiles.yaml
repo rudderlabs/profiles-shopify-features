@@ -19,6 +19,7 @@ models:
         - inputs/rsCART_LINE_ITEMS
         - inputs/rsLAST_CART_STATUS
         - inputs/rsORDER_CREATED_ORDER_CANCELLED
+        - inputs/rsITEMS_PURCHASED_EVER
 
    
 # Remove the section below, if you don't want to generate a feature table
@@ -45,11 +46,8 @@ models:
         #days since last seen
         - entityvar:
             name: days_since_last_seen
-            select: datediff(day, date(max_timestamp_bw_tracks_pages),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
 #       #Churn features
-        - entityvar:
-            name: is_churned_1_days
-            select: case when days_since_last_seen > 1 then 1 else 0 end
         - entityvar:
             name: is_churned_7_days
             select: case when days_since_last_seen > 7 then 1 else 0 end
@@ -71,7 +69,7 @@ models:
        
         - entityvar:
             name: days_since_last_cart_add
-            select: datediff(day, date(max_timestamp_bw_cart_create_update), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            select: datediff(day, date(max_timestamp_bw_cart_create_update), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
        
         #total refund
         - entityvar:
@@ -96,7 +94,7 @@ models:
         
         - entityvar:
             name: days_since_last_purchase
-            select: datediff(day, date(max_timestamp_order_created), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            select: datediff(day, date(max_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
     #days since first purchase
 
         - entityvar:
@@ -106,7 +104,7 @@ models:
 
         - entityvar:
             name: days_since_first_purchase
-            select: datediff(day, date(min_timestamp_order_created), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            select: datediff(day, date(min_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
 
     #has credit card
         - entityvar:
@@ -149,18 +147,13 @@ models:
             name: total_refund_in_past_1_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=1 and financial_status in ('paid','refunded','partially_refunded')
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1 and financial_status in ('paid','refunded','partially_refunded')
     #total_refund_in_past_7_days
         - entityvar:
             name: total_refund_in_past_7_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=7  and financial_status in ('paid','refunded','partially_refunded')
-            
-        - entityvar:
-            name: recent_timestamp
-            select: max(timestamp)
-            from: inputs/rsIdentifies
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
         
         - entityvar:
             name: email_id
@@ -171,18 +164,10 @@ models:
               - timestamp desc
             where: email is not null and email!=''
 
-        # - entityvar:
-        #     name: email_domain
-        #     from: inputs/rsIdentifies
-        #     select: first_value({{get_domain_from_email(email_id)}})
-        #     window:
-        #       order_by: 
-        #       - timestamp desc
-        #     where: email_id is not null and email_id!=''
         
         - entityvar:
             name: days_since_account_creation
-            select: datediff(days,date(min(timestamp)),date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))
+            select: datediff(days,date(min(timestamp)),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
 
             from: inputs/rsIdentifies
 
@@ -270,24 +255,18 @@ models:
               order_by: 
               - timestamp desc
             where: context_device_manufacturer is not null and context_device_manufacturer!='' 
-       
-        - entityvar:
-            name: active_days_in_past_1_days
-            select: count(distinct date(timestamp))
-            from: inputs/rsTracksUnionPages
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 1 
         
         - entityvar:
             name: active_days_in_past_7_days
             select: count(distinct date(timestamp))
             from: inputs/rsTracksUnionPages
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 7 
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
         
         - entityvar:
             name: active_days_in_past_365_days
             select: count(distinct date(timestamp))
             from: inputs/rsTracksUnionPages
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 365 
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
         - inputvar:
             name: session_start_time
             from: inputs/rsTracksUnionPages
@@ -324,46 +303,35 @@ models:
             name: total_sessions_last_week
             from: inputs/rsTracksUnionPages
             select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 7
-        - entityvar:
-            name: total_sessions_1_days
-            from: inputs/rsTracksUnionPages
-            select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 1
+            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
         - entityvar:
             name: total_sessions_90_days
             from: inputs/rsTracksUnionPages
             select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 90
+            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 90
         - entityvar:
             name: total_sessions_365_days
             from: inputs/rsTracksUnionPages
             select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 365
-
+            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 365
 
         - entityvar:
-            name: avg_session_length_overall
+            name: avg_session_length_in_sec_overall
             from: inputs/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: session_row_number = 1 and context_session_id is not null
 
 
         - entityvar:
-            name: avg_session_length_last_week
+            name: avg_session_length_in_sec_last_week
             from: inputs/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
-            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) between 0 and 7
+            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
         - entityvar:
-            name: avg_session_length_1_days
+            name: avg_session_length_in_sec_365_days
             from: inputs/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
-            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=1
-        - entityvar:
-            name: avg_session_length_365_days
-            from: inputs/rsTracksUnionPages
-            select: avg(datediff(second, session_start_time, session_end_time))
-            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date(to_timestamp_tz(replace('{{timestamp}}',' UTC'))))<=365
+            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
 
         - entityvar:
             name: first_seen_date
@@ -377,17 +345,17 @@ models:
             name: carts_in_past_1_days
             select: count(distinct token)
             from: inputs/rsCartCreateUnionCartUpdate
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 1 
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
         - entityvar:
             name: carts_in_past_7_days
             select: count(distinct token)
             from: inputs/rsCartCreateUnionCartUpdate
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 7 
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
         - entityvar:
             name: carts_in_past_365_days
             select: count(distinct token)
             from: inputs/rsCartCreateUnionCartUpdate
-            where:  datediff(day,date(timestamp),date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 365 
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
         - entityvar:
             name: total_carts
             select: count(distinct token)
@@ -413,17 +381,17 @@ models:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
             from: inputs/rsCART_LINE_ITEMS
-            where: datediff(day, date(timestamp), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 1
+            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
         - entityvar:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
             from: inputs/rsCART_LINE_ITEMS
-            where: datediff(day, date(timestamp), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 7
+            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
         - entityvar:
             name: products_added_in_past_365_days
             select: array_agg(distinct product_id)
             from: inputs/rsCART_LINE_ITEMS
-            where: datediff(day, date(timestamp), date(to_timestamp_tz(replace('{{timestamp}}',' UTC')))) <= 365
+            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
         
 
         - entityvar:
@@ -476,14 +444,17 @@ models:
             name: gross_amt_spent_in_past
             select: sum(total_price_usd::real)
             from: inputs/rsORDER_CREATED_ORDER_CANCELLED
-     
+        - entityvar:
+            name: items_purchased_ever
+            select: array_agg(sku)
+            from: inputs/rsITEMS_PURCHASED_EVER
+    
 
 
 
 
       features:
         - days_since_last_seen
-        - is_churned_1_days
         - is_churned_7_days
         - days_since_last_cart_add
         - total_refund
@@ -499,7 +470,6 @@ models:
         - total_refund_in_past_1_days
         - total_refund_in_past_7_days
         - email_id
-        # - email_domain
         - days_since_account_creation
         - has_mobile_app
         - state
@@ -512,13 +482,13 @@ models:
         - campaign_sources
         - is_active_on_website
         - device_manufacturer
-        - active_days_in_past_1_days
         - active_days_in_past_7_days
         - active_days_in_past_365_days
         - total_sessions_till_date
         - total_sessions_last_week
-        - avg_session_length_overall
-        - avg_session_length_last_week
+        - avg_session_length_in_sec_overall
+        - avg_session_length_in_sec_last_week
+        - avg_session_length_in_sec_365_days
         - first_seen_date
         - last_seen_date
         - carts_in_past_1_days
@@ -530,11 +500,9 @@ models:
         - products_added_in_past_1_days
         - products_added_in_past_7_days
         - products_added_in_past_365_days
-        - avg_session_length_1_days
-        - avg_session_length_365_days
-        - total_sessions_1_days
         - total_sessions_90_days
         - total_sessions_365_days
+        - last_cart_status
         - last_cart_value_in_dollars
         - transactions_in_past_1_days
         - transactions_in_past_90_days
@@ -544,4 +512,5 @@ models:
         - net_amt_spent_in_past_365_days
         - net_amt_spent_in_past
         - gross_amt_spent_in_past
+        - items_purchased_ever
 

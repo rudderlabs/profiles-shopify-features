@@ -135,4 +135,15 @@ inputs:
       - select: "CART_TOKEN_ORDER_CANCELLED"
         type: cart_token
         entity: user
+  - name: rsITEMS_PURCHASED_EVER
+    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ITEMS_PURCHASED_EVER
+    occurred_at_col: timestamp
+    ids:
+      - select: "token"
+        type: cart_token
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+  
     
