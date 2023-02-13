@@ -1,0 +1,65 @@
+# This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
+models:
+  - name: shopify_user_id_stitcher
+    model_type: id_stitcher
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: user
+      main_id_type: main_id
+      edge_sources:
+        - inputs/rsIdentifies
+        - inputs/rsTracks
+        - inputs/rsPages
+        - inputs/rsOrderCreated
+        - inputs/rsOrderCancelled
+        - inputs/rsCartUpdate
+        - inputs/rsCartCreate
+        - inputs/rsFeaturesTable
+
+   
+# Remove the section below, if you don't want to generate a feature table
+  - name: shopify_user_features_incremental
+    model_type: feature_table_model
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: user
+      vars:
+       
+        #total refund
+        - entityvar:
+            name: total_refund_incremental
+            select: sum(total_price_usd ::real)
+            from: inputs/rsOrderCancelled
+            where: financial_status in ('paid','refunded','partially_refunded') and timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        
+        - entityvar:
+            name: total_refund_batch
+            select: max(total_refund)
+            from: inputs/rsFeaturesTable
+          
+        - entityvar:
+            name: total_refund
+            # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
+            select: case when total_refund_batch is null and total_refund_incremental is null then null else coalesce(total_refund_batch,0) + coalesce(total_refund_incremental,0) end
+
+    #has credit card
+        - entityvar:
+            name: has_credit_card_incremental
+            select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
+            from: inputs/rsOrderCreated
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+        
+        - entityvar:
+            name: has_credit_card_batch
+            select: max(has_credit_card)
+            from: inputs/rsFeaturesTable
+
+        - entityvar:
+            # Max would tickle down to max(incremental, batch); min should do the same  - min(incremental, batch)
+            name: has_credit_card
+            select: case when has_credit_card_batch is null and has_credit_card_incremental is null then null else greatest(coalesce(has_credit_card_batch,0), coalesce(has_credit_card_incremental,0))  end
+
+
+      features:
+        - total_refund
+        - has_credit_card

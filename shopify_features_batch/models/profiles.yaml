@@ -1,0 +1,42 @@
+# This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
+models:
+  - name: shopify_user_id_stitcher
+    model_type: id_stitcher
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: user
+      main_id_type: main_id
+      edge_sources:
+        - inputs/rsIdentifies
+        - inputs/rsTracks
+        - inputs/rsPages
+        - inputs/rsOrderCreated
+        - inputs/rsOrderCancelled
+        - inputs/rsCartUpdate
+        - inputs/rsCartCreate
+
+# Remove the section below, if you don't want to generate a feature table
+  - name: shopify_user_features_incremental
+    model_type: feature_table_model
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: user
+      vars:
+       
+        #total refund
+        - entityvar:
+            name: total_refund
+            select: sum(total_price_usd ::real)
+            from: inputs/rsOrderCancelled
+            where: financial_status in ('paid','refunded','partially_refunded')
+
+    #has credit card
+        - entityvar:
+            name: has_credit_card
+            select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
+            from: inputs/rsOrderCreated     
+
+      features:
+        - total_refund
+        - has_credit_card
+        
