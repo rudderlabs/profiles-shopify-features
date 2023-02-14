@@ -42,7 +42,63 @@ models:
             # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
             select: case when total_refund_batch is null and total_refund_incremental is null then null else coalesce(total_refund_batch,0) + coalesce(total_refund_incremental,0) end
 
-    #has credit card
+        - entityvar:
+            name: max_timestamp_tracks_incremental
+            select: max(timestamp)
+            from: inputs/rsTracks
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+        - entityvar:
+            name: max_timestamp_tracks_batch
+            select: max(timestamp)
+            from: inputs/rsTracks
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+
+        
+        - entityvar:
+            name: max_timestamp_tracks
+            select: coalesce(max_timestamp_tracks_incremental, max_timestamp_tracks_batch)
+
+
+        - entityvar:
+            name: max_timestamp_pages_incremental
+            select: max(timestamp)
+            from: inputs/rsPages
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+        - entityvar:
+            name: max_timestamp_pages_batch
+            select: max(timestamp)
+            from: inputs/rsPages
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+
+        - entityvar:
+            name: max_timestamp_pages
+            select: coalesce(max_timestamp_pages_incremental, max_timestamp_pages_batch)
+
+
+        - entityvar:
+            name: max_timestamp_bw_tracks_pages
+            select: greatest(coalesce(max_timestamp_tracks,max_timestamp_pages),coalesce(max_timestamp_pages,max_timestamp_tracks))
+        - entityvar:
+            name: days_since_last_seen
+            select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+
+        - entityvar:
+            name: refund_count_incremental
+            select: count(*)
+            from: inputs/rsOrderCancelled
+            where: financial_status in ('paid','refunded','partially_refunded') and timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        
+        - entityvar:
+            name: refund_count_batch
+            select: max(refund_count)
+            from: inputs/rsFeaturesTable
+          
+        - entityvar:
+            name: refund_count
+            # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
+            select: case when refund_count_batch is null and refund_count_incremental is null then null else coalesce(refund_count_batch,0) + coalesce(refund_count_incremental,0) end
+            
+        #has credit card
         - entityvar:
             name: has_credit_card_incremental
             select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
@@ -58,8 +114,28 @@ models:
             # Max would tickle down to max(incremental, batch); min should do the same  - min(incremental, batch)
             name: has_credit_card
             select: case when has_credit_card_batch is null and has_credit_card_incremental is null then null else greatest(coalesce(has_credit_card_batch,0), coalesce(has_credit_card_incremental,0))  end
-
+        - entityvar:
+            name: highest_transaction_value_incremental
+            select: max(total_price_usd ::real)
+            from: inputs/rsOrderCreated
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        
+        - entityvar:
+            name: highest_transaction_value_batch
+            select: max(highest_transaction_value ::real)
+            from: inputs/rsFeaturesTable
+          
+        - entityvar:
+            name: highest_transaction_value
+            # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
+            select: greatest(coalesce(highest_transaction_value_incremental, highest_transaction_value_batch),coalesce(highest_transaction_value_batch,highest_transaction_value_incremental))
 
       features:
         - total_refund
+        - max_timestamp_tracks
+        - max_timestamp_pages
+        - max_timestamp_bw_tracks_pages
+        - days_since_last_seen
         - has_credit_card
+        - refund_count
+        - highest_transaction_value
