@@ -17,6 +17,9 @@ models:
         - inputs/rsTracksUnionPages
         - inputs/rsCartCreateUnionCartUpdate
         - inputs/rsCART_LINE_ITEMS
+        - inputs/rsLAST_CART_STATUS
+        - inputs/rsORDER_CREATED_ORDER_CANCELLED
+        - inputs/rsITEMS_PURCHASED_EVER
 
    
 # Remove the section below, if you don't want to generate a feature table
@@ -151,29 +154,8 @@ models:
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
-            
-        - entityvar:
-            name: recent_timestamp
-            select: max(timestamp)
-            from: inputs/rsIdentifies
         
-        - entityvar:
-            name: email_id
-            select: first_value(email)
-            from: inputs/rsIdentifies
-            window:
-              order_by: 
-              - timestamp desc
-            where: email is not null and email!=''
-
-        # - entityvar:
-        #     name: email_domain
-        #     from: inputs/rsIdentifies
-        #     select: first_value({{get_domain_from_email(email_id)}})
-        #     window:
-        #       order_by: 
-        #       - timestamp desc
-        #     where: email_id is not null and email_id!=''
+       
         
         - entityvar:
             name: days_since_account_creation
@@ -314,7 +296,17 @@ models:
             from: inputs/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
-     
+        - entityvar:
+            name: total_sessions_90_days
+            from: inputs/rsTracksUnionPages
+            select: count(distinct context_session_id)
+            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 90
+        - entityvar:
+            name: total_sessions_365_days
+            from: inputs/rsTracksUnionPages
+            select: count(distinct context_session_id)
+            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 365
+
         - entityvar:
             name: avg_session_length_in_sec_overall
             from: inputs/rsTracksUnionPages
@@ -327,7 +319,12 @@ models:
             from: inputs/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
-        
+        - entityvar:
+            name: avg_session_length_in_sec_365_days
+            from: inputs/rsTracksUnionPages
+            select: avg(datediff(second, session_start_time, session_end_time))
+            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+
         - entityvar:
             name: first_seen_date
             from: inputs/rsTracksUnionPages
@@ -389,19 +386,62 @@ models:
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
         
 
-        # - entityvar:
-        #     name: latest_cart_token
-        #     from: inputs/rsCART_LINE_ITEMS
-        #     select: first_value(token)
-        #     window:
-              
-        #         order_by: 
-        #             - timestamp desc
-        # - entityvar:
-        #     name: last_cart_value_in_dollars
-        #     select: sum(line_price)
-        #     from: inputs/rsCART_LINE_ITEMS
-        #     where: token =  latest_cart_token 
+        - entityvar:
+            name: last_cart_value_in_dollars
+            select: sum(line_price)
+            from: inputs/rsCART_LINE_ITEMS
+        - entityvar:
+            name: last_cart_status
+            select: min(coalesce(fulfillment_status, financial_status, 'abandoned'))
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+        - entityvar:
+            name: transactions_in_past_1_days
+            select: count(*)::real
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1
+
+        - entityvar:
+            name: transactions_in_past_90_days
+            select: count(*)::real
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=90
+
+        - entityvar:
+            name: transactions_in_past_365_days
+            select: count(*)::real
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+        - entityvar:
+            name: net_amt_spent_in_past_90_days
+            select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=90
+
+        - entityvar:
+            name: net_amt_spent_in_past_365_days
+            select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+
+        - entityvar:
+            name: net_amt_spent_in_past_1_days
+            select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1
+        - entityvar:
+            name: net_amt_spent_in_past
+            select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+        - entityvar:
+            name: gross_amt_spent_in_past
+            select: sum(total_price_usd::real)
+            from: inputs/rsORDER_CREATED_ORDER_CANCELLED
+        - entityvar:
+            name: items_purchased_ever
+            select: array_agg(sku)
+            from: inputs/rsITEMS_PURCHASED_EVER
+    
+
 
 
 
@@ -421,8 +461,6 @@ models:
         - total_transactions
         - total_refund_in_past_1_days
         - total_refund_in_past_7_days
-        - email_id
-        # - email_domain
         - days_since_account_creation
         - has_mobile_app
         - state
@@ -441,6 +479,7 @@ models:
         - total_sessions_last_week
         - avg_session_length_in_sec_overall
         - avg_session_length_in_sec_last_week
+        - avg_session_length_in_sec_365_days
         - first_seen_date
         - last_seen_date
         - carts_in_past_1_days
@@ -452,5 +491,17 @@ models:
         - products_added_in_past_1_days
         - products_added_in_past_7_days
         - products_added_in_past_365_days
-        # - last_cart_value_in_dollars
+        - total_sessions_90_days
+        - total_sessions_365_days
+        - last_cart_status
+        - last_cart_value_in_dollars
+        - transactions_in_past_1_days
+        - transactions_in_past_90_days
+        - transactions_in_past_365_days
+        - net_amt_spent_in_past_1_days
+        - net_amt_spent_in_past_90_days
+        - net_amt_spent_in_past_365_days
+        - net_amt_spent_in_past
+        - gross_amt_spent_in_past
+        - items_purchased_ever
 
