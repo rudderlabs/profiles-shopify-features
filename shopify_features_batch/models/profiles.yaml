@@ -118,7 +118,8 @@ models:
             name: total_products_added
             select: array_agg(distinct product_id)
             from: inputs/rsCART_LINE_ITEMS
-
+       
+        
       features:
         - total_refund
         - max_timestamp_tracks
@@ -127,11 +128,15 @@ models:
         - days_since_last_seen
         - has_credit_card
         - refund_count
-
+        - total_units_across_transactions
+        - total_transactions_units
+        - total_value_across_transactions
+        - total_transactions_value
         - avg_units_per_transaction
         - avg_transaction_value
         - highest_transaction_value
         - first_name
         - last_transaction_value
         - total_products_added
+        
         

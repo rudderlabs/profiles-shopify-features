@@ -15,6 +15,8 @@ models:
         - inputs/rsCartUpdate
         - inputs/rsCartCreate
         - inputs/rsFeaturesTable
+        - inputs/rsCART_LINE_ITEMS
+
 
    
 # Remove the section below, if you don't want to generate a feature table
@@ -163,11 +165,13 @@ models:
         - entityvar:
             name: last_transaction_value
             select: coalesce(last_transaction_value_incremental,last_transaction_value_batch)
+        
+        
         - entityvar:
             name: total_units_across_transactions_incremental
             select: sum(array_size( parse_json(products)))
             from: inputs/rsOrderCreated
-            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
         - entityvar:
             name: total_units_across_transactions_batch
             select: max(total_units_across_transactions)
@@ -180,10 +184,10 @@ models:
             name: total_transactions_units_incremental
             select: sum(array_size( parse_json(products)))
             from: inputs/rsOrderCreated
-            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
         - entityvar:
             name: total_transactions_units_batch
-            select: max(total_units_across_transactions)
+            select: max(total_transactions_units)
             from: inputs/rsFeaturesTable
         
         - entityvar:
@@ -198,7 +202,7 @@ models:
             name: total_value_across_transactions_incremental
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCreated
-            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
         - entityvar:
             name: total_value_across_transactions_batch
             select: max(total_value_across_transactions)
@@ -210,7 +214,7 @@ models:
             name: total_transactions_value_incremental
             select: count(*)
             from: inputs/rsOrderCreated
-            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
         - entityvar:
             name: total_transactions_value_batch
             select: max(total_transactions_value)
@@ -226,14 +230,19 @@ models:
             name: total_products_added_incremental
             select: array_agg(distinct product_id)
             from: inputs/rsCART_LINE_ITEMS
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental)
         - entityvar:
             name: total_products_added_batch
-            select: max(total_products_added)
             from: inputs/rsFeaturesTable
+            select: any_value(total_products_added)
+        
+
+
         - entityvar:
             name: total_products_added
-            select: unnest(total_products_added_incremental||total_products_added_batch)
+            select: ARRAY_CAT(IFNULL(total_products_added_incremental,ARRAY_CONSTRUCT()),IFNULL(total_products_added_batch,ARRAY_CONSTRUCT()))
 
+        
 
 
         
@@ -247,11 +256,14 @@ models:
         - days_since_last_seen
         - has_credit_card
         - refund_count
+        - total_units_across_transactions
+        - total_transactions_units
+        - total_value_across_transactions
+        - total_transactions_value
+        - avg_units_per_transaction
+        - avg_transaction_value
         - highest_transaction_value
         - first_name
         - last_transaction_value
-        - avg_units_per_transaction
-        - avg_transaction_value
         - total_products_added
-
         
