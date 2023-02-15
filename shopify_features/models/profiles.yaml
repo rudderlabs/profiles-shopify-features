@@ -155,15 +155,7 @@ models:
             from: inputs/rsOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
         
-        - entityvar:
-            name: email_id
-            select: first_value(email)
-            from: inputs/rsIdentifies
-            window:
-              order_by: 
-              - timestamp desc
-            where: email is not null and email!=''
-
+       
         
         - entityvar:
             name: days_since_account_creation
@@ -469,7 +461,6 @@ models:
         - total_transactions
         - total_refund_in_past_1_days
         - total_refund_in_past_7_days
-        - email_id
         - days_since_account_creation
         - has_mobile_app
         - state

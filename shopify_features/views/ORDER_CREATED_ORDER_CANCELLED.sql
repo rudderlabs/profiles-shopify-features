@@ -19,7 +19,7 @@ create or replace view RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CRE
 	PRODUCTS_ORDER_CANCELLED
 ) as 
 
-with abc as  
+with order_status as  
 (select 
 a.ANONYMOUS_ID,
 a.user_id,
@@ -41,4 +41,4 @@ a.products,
  b.products as products_order_cancelled 
  from order_created a left join order_cancelled b 
  on a.user_id = b.user_id and a.order_number = b.order_number)
- select * from abc;
+ select * from order_status;

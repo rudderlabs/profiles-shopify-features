@@ -83,37 +83,31 @@ Following features get created in the table ```shopify_user_features``` in the s
         - total_transactions(int): Total number of transactions done by the user
         - total_refund_in_past_1_days(float): Total refund for a particular user in last 1 day
         - total_refund_in_past_7_days(float): Total refund for a particular user in last 7 day
-        - email_id(str): 
         - days_since_account_creation(int)
         - has_mobile_app(bool)
-        - state(Str)
-        - country(Str)
-        - first_name(str)
-        - last_name(Str)
-        - currency(str)
-        - device_type(str)
-        - device_name(str)
+        
         - campaign_sources(Array[str])
         - is_active_on_website(bool)
         - device_manufacturer(str)
-        - active_days_in_past_7_days(int): Derived from rsTracksUnionPages
-        - active_days_in_past_365_days(int): Derived from rsTracksUnionPages
+        - active_days_in_past_7_days(int): Derived from both pages and tracks tables.
+
+        - active_days_in_past_365_days(int): Derived from both pages and tracks tables.
         - total_sessions_till_date(int)
         - total_sessions_last_week(int)
         - avg_session_length_in_sec_overall9(float)
         - avg_session_length_in_sec_last_week(float)
         - first_seen_date(str): The first date on which an event has been recorded by the user
         - last_seen_date(str): The latest date on which an event has been recorded by the user
-        - carts_in_past_1_days(int): A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days(Derived from CartCreateand Union CartUpdate)
-        - carts_in_past_7_days(int): A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days(Derived from CartCreateand Union CartUpdate)
+        - carts_in_past_1_days(int): A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days(Derived from cart_create and cart_update events)
+        - carts_in_past_7_days(int): A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days(Derived from cart_create and cart_update events)
         - carts_in_past_365_days(int):
-        A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days(Derived from CartCreateand Union CartUpdate)
-        - total_carts(int): Total carts created by the user till date. (Derived from CartCreateand Union CartUpdate)
+        A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days(Derived from cart_create and cart_update events)
+        - total_carts(int): Total carts created by the user till date. (Derived from cart_create and cart_update events)
         - last_transaction_value(float)
         - total_products_added(Array[str]):: Total products added till date. (array with list of all product ids)
-        - products_added_in_past_1_days(Array[str]): Products added by the user in last 1 days(Derived from rsCART_LINE_ITEMS)
-        - products_added_in_past_7_days(Array[str]): Products added by the user in last 7 days(Derived from rsCART_LINE_ITEMS)
-        - products_added_in_past_365_days(Array[str]): Products added by the user in last 365 days(Derived from rsCART_LINE_ITEMS)
+        - products_added_in_past_1_days(Array[str]): Products added by the user in last 1 days(Derived from cart_create and cart_update events. Disclaimer: If a product is added to the cart but removed later, such products won't be part of this list.)
+        - products_added_in_past_7_days(Array[str]): Products added by the user in last 7 days
+        - products_added_in_past_365_days(Array[str]): Products added by the user in last 365 days
         - avg_session_length_1_days(float)
         - avg_session_length_365_days(float)
         - total_sessions_1_days(int)
@@ -130,3 +124,11 @@ Following features get created in the table ```shopify_user_features``` in the s
         - net_amt_spent_in_past(float) : Derived from joining ORDER_CREATED and ORDER_CANCELLED table
         - gross_amt_spent_in_past(float) :Consider only sales. Derived from joining ORDER_CREATED and ORDER_CANCELLED table
 
+## The below features are derived from the identify call. If multiple values are found, the most recent value is used.
+        - state(Str)
+        - country(Str)
+        - first_name(str)
+        - last_name(Str)
+        - currency(str)
+        - device_type(str)
+        - device_name(str)
