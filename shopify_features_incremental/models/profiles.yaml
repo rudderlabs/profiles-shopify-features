@@ -129,6 +129,115 @@ models:
             name: highest_transaction_value
             # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
             select: greatest(coalesce(highest_transaction_value_incremental, highest_transaction_value_batch),coalesce(highest_transaction_value_batch,highest_transaction_value_incremental))
+        - entityvar:
+            name: first_name_incremental
+            select: first_value(first_name)
+            from: inputs/rsIdentifies
+            window:
+              order_by: 
+              - timestamp desc
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) and first_name is not null and first_name!=''
+       
+
+        - entityvar:
+            name: first_name_batch
+            select: max(first_name)
+            from: inputs/rsFeaturesTable
+            where: first_name is not null and first_name!=''
+        - entityvar:
+            name: first_name
+            select: coalesce(first_name_incremental,first_name_batch)
+        - entityvar:
+            name: last_transaction_value_incremental
+            from: inputs/rsOrderCreated
+            select: first_value(total_price_usd)
+            window:
+              order_by: 
+              - case when TOTAL_PRICE_USD is not null then 2 else 1 end desc
+              - timestamp desc
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        - entityvar:
+            name: last_transaction_value_batch
+            from: inputs/rsFeaturesTable
+            select: max(last_transaction_value)
+        - entityvar:
+            name: last_transaction_value
+            select: coalesce(last_transaction_value_incremental,last_transaction_value_batch)
+        - entityvar:
+            name: total_units_across_transactions_incremental
+            select: sum(array_size( parse_json(products)))
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_units_across_transactions_batch
+            select: max(total_units_across_transactions)
+            from: inputs/rsFeaturesTable
+        - entityvar:
+            name: total_units_across_transactions
+            select: case when total_units_across_transactions_batch is null and total_units_across_transactions_incremental is null then null else coalesce(total_units_across_transactions_batch,0) + coalesce(total_units_across_transactions_incremental,0) end
+
+        - entityvar:
+            name: total_transactions_units_incremental
+            select: sum(array_size( parse_json(products)))
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_transactions_units_batch
+            select: max(total_units_across_transactions)
+            from: inputs/rsFeaturesTable
+        
+        - entityvar:
+            name: total_transactions_units
+            select: case when total_transactions_units_batch is null and total_transactions_units_incremental is null then null else coalesce(total_transactions_units_batch,0) + coalesce(total_transactions_units_incremental,0) end
+        - entityvar:
+            name: avg_units_per_transaction
+            select: (total_units_across_transactions/total_transactions_units)::real
+        
+        
+        - entityvar:
+            name: total_value_across_transactions_incremental
+            select: sum(total_price_usd::real)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_value_across_transactions_batch
+            select: max(total_value_across_transactions)
+            from: inputs/rsFeaturesTable
+        - entityvar:
+            name: total_value_across_transactions
+            select: case when total_value_across_transactions_batch is null and total_value_across_transactions_incremental is null then null else coalesce(total_value_across_transactions_batch,0) + coalesce(total_value_across_transactions_incremental,0) end
+        - entityvar:
+            name: total_transactions_value_incremental
+            select: count(*)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_transactions_value_batch
+            select: max(total_transactions_value)
+            from: inputs/rsFeaturesTable
+        
+        - entityvar:
+            name: total_transactions_value
+            select: case when total_transactions_value_batch is null and total_transactions_value_incremental is null then null else coalesce(total_transactions_value_batch,0) + coalesce(total_transactions_value_incremental,0) end
+        - entityvar:
+            name: avg_transaction_value
+            select: (total_value_across_transactions/total_transactions_value)::real
+        - entityvar:
+            name: total_products_added_incremental
+            select: array_agg(distinct product_id)
+            from: inputs/rsCART_LINE_ITEMS
+        - entityvar:
+            name: total_products_added_batch
+            select: max(total_products_added)
+            from: inputs/rsFeaturesTable
+        - entityvar:
+            name: total_products_added
+            select: unnest(total_products_added_incremental||total_products_added_batch)
+
+
+
+        
+        
 
       features:
         - total_refund
@@ -139,3 +248,10 @@ models:
         - has_credit_card
         - refund_count
         - highest_transaction_value
+        - first_name
+        - last_transaction_value
+        - avg_units_per_transaction
+        - avg_transaction_value
+        - total_products_added
+
+        
