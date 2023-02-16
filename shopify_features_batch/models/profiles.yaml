@@ -14,6 +14,7 @@ models:
         - inputs/rsOrderCancelled
         - inputs/rsCartUpdate
         - inputs/rsCartCreate
+        - inputs/rsCART_LINE_ITEMS
 
 # Remove the section below, if you don't want to generate a feature table
   - name: shopify_user_features_incremental
@@ -30,13 +31,112 @@ models:
             from: inputs/rsOrderCancelled
             where: financial_status in ('paid','refunded','partially_refunded')
 
-    #has credit card
+        - entityvar:
+            name: max_timestamp_tracks
+            select: max(timestamp)
+            from: inputs/rsTracks
+
+        - entityvar:
+            name: max_timestamp_pages
+            select: max(timestamp)
+            from: inputs/rsPages
+
+
+        - entityvar:
+            name: max_timestamp_bw_tracks_pages
+            select: greatest(coalesce(max_timestamp_tracks,max_timestamp_pages),coalesce(max_timestamp_pages,max_timestamp_tracks))
+        #days since last seen
+        - entityvar:
+            name: days_since_last_seen
+            select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+
+   
+
+        #has credit card
         - entityvar:
             name: has_credit_card
             select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
-            from: inputs/rsOrderCreated     
+            from: inputs/rsOrderCreated   
+        #refund count
+        - entityvar:
+            name: refund_count
+            select: count(*)
+            from: inputs/rsOrderCancelled
+            where: financial_status in ('paid','refunded','partially_refunded')
+         #avg_units_per_transaction
+        - entityvar:
+            name: total_units_across_transactions
+            select: sum(array_size( parse_json(products)))
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_transactions_units
+            select: count(*)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        
+        - entityvar:
+            name: avg_units_per_transaction
+            select: (total_units_across_transactions/total_transactions_units)::real
 
+        - entityvar:
+            name: total_value_across_transactions
+            select: sum(total_price_usd::real)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_transactions_value
+            select: count(*)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        
+        - entityvar:
+            name: avg_transaction_value
+            select: (total_value_across_transactions/total_transactions_value)::real
+        # #highest_transaction_value
+        - entityvar:
+            name: highest_transaction_value
+            select: max(total_price_usd ::real)
+            from: inputs/rsOrderCreated
+        - entityvar:
+            name: first_name
+            from: inputs/rsIdentifies
+            select: first_value(first_name)
+            window:
+              order_by: 
+              - timestamp desc
+            where: first_name is not null and first_name!=''
+        - entityvar:
+            name: last_transaction_value
+            from: inputs/rsOrderCreated
+            select: first_value(total_price_usd)
+            window:
+              order_by: 
+              - case when TOTAL_PRICE_USD is not null then 2 else 1 end desc
+              - timestamp desc
+        - entityvar:
+            name: total_products_added
+            select: array_agg(distinct product_id)
+            from: inputs/rsCART_LINE_ITEMS
+       
+        
       features:
         - total_refund
+        - max_timestamp_tracks
+        - max_timestamp_pages
+        - max_timestamp_bw_tracks_pages
+        - days_since_last_seen
         - has_credit_card
+        - refund_count
+        - total_units_across_transactions
+        - total_transactions_units
+        - total_value_across_transactions
+        - total_transactions_value
+        - avg_units_per_transaction
+        - avg_transaction_value
+        - highest_transaction_value
+        - first_name
+        - last_transaction_value
+        - total_products_added
+        
         

@@ -15,6 +15,8 @@ models:
         - inputs/rsCartUpdate
         - inputs/rsCartCreate
         - inputs/rsFeaturesTable
+        - inputs/rsCART_LINE_ITEMS
+
 
    
 # Remove the section below, if you don't want to generate a feature table
@@ -42,7 +44,63 @@ models:
             # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
             select: case when total_refund_batch is null and total_refund_incremental is null then null else coalesce(total_refund_batch,0) + coalesce(total_refund_incremental,0) end
 
-    #has credit card
+        - entityvar:
+            name: max_timestamp_tracks_incremental
+            select: max(timestamp)
+            from: inputs/rsTracks
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+        - entityvar:
+            name: max_timestamp_tracks_batch
+            select: max(timestamp)
+            from: inputs/rsTracks
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+
+        
+        - entityvar:
+            name: max_timestamp_tracks
+            select: coalesce(max_timestamp_tracks_incremental, max_timestamp_tracks_batch)
+
+
+        - entityvar:
+            name: max_timestamp_pages_incremental
+            select: max(timestamp)
+            from: inputs/rsPages
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+        - entityvar:
+            name: max_timestamp_pages_batch
+            select: max(timestamp)
+            from: inputs/rsPages
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) # Similar to max_timestamp_pages_delta
+
+        - entityvar:
+            name: max_timestamp_pages
+            select: coalesce(max_timestamp_pages_incremental, max_timestamp_pages_batch)
+
+
+        - entityvar:
+            name: max_timestamp_bw_tracks_pages
+            select: greatest(coalesce(max_timestamp_tracks,max_timestamp_pages),coalesce(max_timestamp_pages,max_timestamp_tracks))
+        - entityvar:
+            name: days_since_last_seen
+            select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+
+        - entityvar:
+            name: refund_count_incremental
+            select: count(*)
+            from: inputs/rsOrderCancelled
+            where: financial_status in ('paid','refunded','partially_refunded') and timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        
+        - entityvar:
+            name: refund_count_batch
+            select: max(refund_count)
+            from: inputs/rsFeaturesTable
+          
+        - entityvar:
+            name: refund_count
+            # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
+            select: case when refund_count_batch is null and refund_count_incremental is null then null else coalesce(refund_count_batch,0) + coalesce(refund_count_incremental,0) end
+            
+        #has credit card
         - entityvar:
             name: has_credit_card_incremental
             select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
@@ -58,8 +116,154 @@ models:
             # Max would tickle down to max(incremental, batch); min should do the same  - min(incremental, batch)
             name: has_credit_card
             select: case when has_credit_card_batch is null and has_credit_card_incremental is null then null else greatest(coalesce(has_credit_card_batch,0), coalesce(has_credit_card_incremental,0))  end
+        - entityvar:
+            name: highest_transaction_value_incremental
+            select: max(total_price_usd ::real)
+            from: inputs/rsOrderCreated
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        
+        - entityvar:
+            name: highest_transaction_value_batch
+            select: max(highest_transaction_value ::real)
+            from: inputs/rsFeaturesTable
+          
+        - entityvar:
+            name: highest_transaction_value
+            # Here we sum the total refund batch with total refund incremental to get the new total_refund. We need to be careful about the nulls. 
+            select: greatest(coalesce(highest_transaction_value_incremental, highest_transaction_value_batch),coalesce(highest_transaction_value_batch,highest_transaction_value_incremental))
+        - entityvar:
+            name: first_name_incremental
+            select: first_value(first_name)
+            from: inputs/rsIdentifies
+            window:
+              order_by: 
+              - timestamp desc
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental) and first_name is not null and first_name!=''
+       
 
+        - entityvar:
+            name: first_name_batch
+            select: max(first_name)
+            from: inputs/rsFeaturesTable
+            where: first_name is not null and first_name!=''
+        - entityvar:
+            name: first_name
+            select: coalesce(first_name_incremental,first_name_batch)
+        - entityvar:
+            name: last_transaction_value_incremental
+            from: inputs/rsOrderCreated
+            select: first_value(total_price_usd)
+            window:
+              order_by: 
+              - case when TOTAL_PRICE_USD is not null then 2 else 1 end desc
+              - timestamp desc
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        - entityvar:
+            name: last_transaction_value_batch
+            from: inputs/rsFeaturesTable
+            select: max(last_transaction_value)
+        - entityvar:
+            name: last_transaction_value
+            select: coalesce(last_transaction_value_incremental,last_transaction_value_batch)
+        
+        
+        - entityvar:
+            name: total_units_across_transactions_incremental
+            select: sum(array_size( parse_json(products)))
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_units_across_transactions_batch
+            select: max(total_units_across_transactions)
+            from: inputs/rsFeaturesTable
+        - entityvar:
+            name: total_units_across_transactions
+            select: case when total_units_across_transactions_batch is null and total_units_across_transactions_incremental is null then null else coalesce(total_units_across_transactions_batch,0) + coalesce(total_units_across_transactions_incremental,0) end
+
+        - entityvar:
+            name: total_transactions_units_incremental
+            select: sum(array_size( parse_json(products)))
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_transactions_units_batch
+            select: max(total_transactions_units)
+            from: inputs/rsFeaturesTable
+        
+        - entityvar:
+            name: total_transactions_units
+            select: case when total_transactions_units_batch is null and total_transactions_units_incremental is null then null else coalesce(total_transactions_units_batch,0) + coalesce(total_transactions_units_incremental,0) end
+        - entityvar:
+            name: avg_units_per_transaction
+            select: (total_units_across_transactions/total_transactions_units)::real
+        
+        
+        - entityvar:
+            name: total_value_across_transactions_incremental
+            select: sum(total_price_usd::real)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_value_across_transactions_batch
+            select: max(total_value_across_transactions)
+            from: inputs/rsFeaturesTable
+        - entityvar:
+            name: total_value_across_transactions
+            select: case when total_value_across_transactions_batch is null and total_value_across_transactions_incremental is null then null else coalesce(total_value_across_transactions_batch,0) + coalesce(total_value_across_transactions_incremental,0) end
+        - entityvar:
+            name: total_transactions_value_incremental
+            select: count(*)
+            from: inputs/rsOrderCreated
+            where: check_json(products) is null and timestamp > (select max(valid_at) from shopify_user_features_incremental) # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
+        - entityvar:
+            name: total_transactions_value_batch
+            select: max(total_transactions_value)
+            from: inputs/rsFeaturesTable
+        
+        - entityvar:
+            name: total_transactions_value
+            select: case when total_transactions_value_batch is null and total_transactions_value_incremental is null then null else coalesce(total_transactions_value_batch,0) + coalesce(total_transactions_value_incremental,0) end
+        - entityvar:
+            name: avg_transaction_value
+            select: (total_value_across_transactions/total_transactions_value)::real
+        - entityvar:
+            name: total_products_added_incremental
+            select: array_agg(distinct product_id)
+            from: inputs/rsCART_LINE_ITEMS
+            where: timestamp > (select max(valid_at) from shopify_user_features_incremental)
+        - entityvar:
+            name: total_products_added_batch
+            from: inputs/rsFeaturesTable
+            select: any_value(total_products_added)
+        
+
+
+        - entityvar:
+            name: total_products_added
+            select: ARRAY_CAT(IFNULL(total_products_added_incremental,ARRAY_CONSTRUCT()),IFNULL(total_products_added_batch,ARRAY_CONSTRUCT()))
+
+        
+
+
+        
+        
 
       features:
         - total_refund
+        - max_timestamp_tracks
+        - max_timestamp_pages
+        - max_timestamp_bw_tracks_pages
+        - days_since_last_seen
         - has_credit_card
+        - refund_count
+        - total_units_across_transactions
+        - total_transactions_units
+        - total_value_across_transactions
+        - total_transactions_value
+        - avg_units_per_transaction
+        - avg_transaction_value
+        - highest_transaction_value
+        - first_name
+        - last_transaction_value
+        - total_products_added
+        
