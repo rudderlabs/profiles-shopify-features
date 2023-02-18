@@ -2,10 +2,10 @@
 name: shopify_features
 
 # Project's yaml schema version
-schema_version: 18
+schema_version: 20
 
 # WH Connection Profile to use.
-profile: shopify_wh
+profile: wyze_cred
 
 # Whether to allow inputs having no timestamps,
 # if true, data without timestamps are included when running models
@@ -18,18 +18,20 @@ model_folders:
 # Entities in this project and their ids.
 entities:
   - name: user
-    id_stitcher: models/shopify_user_id_stitcher
+    id_stitcher: models/shopify_id_stitcher_incremental
     id_types:
       - main_id
       - user_id
       - anonymous_id
       - email
       - cart_token
+      - token
 
 id_types:
   - name: main_id
   - name: user_id
   - name: cart_token
+  - name: token
   - name: anonymous_id
     filters:
       - type: exclude

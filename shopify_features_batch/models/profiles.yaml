@@ -1,6 +1,6 @@
 # This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
 models:
-  - name: shopify_user_id_stitcher
+  - name: shopify_id_stitcher_incremental
     model_type: id_stitcher
     model_spec:
       validity_time: 24h # 1 day
@@ -14,7 +14,7 @@ models:
         - inputs/rsOrderCancelled
         - inputs/rsCartUpdate
         - inputs/rsCartCreate
-        - inputs/rsCART_LINE_ITEMS
+        - inputs/rsCartLineItems
 
 # Remove the section below, if you don't want to generate a feature table
   - name: shopify_user_features_incremental
@@ -117,7 +117,7 @@ models:
         - entityvar:
             name: total_products_added
             select: array_agg(distinct product_id)
-            from: inputs/rsCART_LINE_ITEMS
+            from: inputs/rsCartLineItems
        
         
       features:

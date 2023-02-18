@@ -1,7 +1,7 @@
 # This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
 inputs:
   - name: rsIdentifies
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES 
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.IDENTIFIES 
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -10,11 +10,11 @@ inputs:
       - select: "anonymous_id"
         type: anonymous_id
         entity: user
-      - select: "lower(email)"
+      - select: "upper(email)"
         type: email
         entity: user
   - name: rsTracks
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.TRACKS
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -24,7 +24,7 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsPages
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.PAGES
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -34,7 +34,7 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsOrderCreated
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CREATED
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.ORDER_CREATED
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -42,12 +42,21 @@ inputs:
         entity: user
       - select: "anonymous_id"
         type: anonymous_id
+        entity: user
+      - select: "upper(email)"
+        type: email
+        entity: user
+      - select: "token"
+        type: token
+        entity: user
+      - select: "checkout_token"
+        type: token
         entity: user
       - select: "cart_token"
         type: cart_token
         entity: user
   - name: rsOrderCancelled
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CANCELLED
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.ORDER_CANCELLED
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -59,8 +68,18 @@ inputs:
       - select: "cart_token"
         type: cart_token
         entity: user
+      - select: "token"
+        type: token
+        entity: user
+      - select: "checkout_token"
+        type: token
+        entity: user
+      - select: "upper(email)"
+        type: email
+        entity: user
+
   - name: rsCartUpdate
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_UPDATE
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.CART_UPDATE
     occurred_at_col: timestamp
     ids:
       - select: "token"
@@ -70,7 +89,7 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsCartCreate
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_CREATE
+    table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.CART_CREATE
     occurred_at_col: timestamp
     ids:
       - select: "token"
@@ -80,7 +99,7 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsTracksUnionPages
-    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS_UNION_PAGES
+    view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.TRACKS_UNION_PAGES
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -89,8 +108,8 @@ inputs:
       - select: "anonymous_id"
         type: anonymous_id
         entity: user
-  - name: rsCartCreateUnionCartUpdate
-    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_CREATE_UNION_CART_UPDATE
+  - name: rsCartCreatesUnionCartUpdate
+    view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.CART_CREATE_UNION_CART_UPDATE
     occurred_at_col: timestamp
     ids:
       - select: "token"
@@ -101,8 +120,8 @@ inputs:
         entity: user
 
  
-  - name: rsCART_LINE_ITEMS
-    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_LINE_ITEMS
+  - name: rsCartLineItems
+    view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.CART_LINE_ITEMS
     occurred_at_col: timestamp
     ids:
       - select: "token"
@@ -111,3 +130,78 @@ inputs:
       - select: "anonymous_id"
         type: anonymous_id
         entity: user
+
+  # - name: shopifyCheckoutStarted
+  #   table: RUDDERSTACK_EVENTS.SHOPIFY_PRD.CHECKOUT_STARTED
+  #   occurred_at_col: timestamp
+  #   ids:
+  #     - select: "user_id"
+  #       type: shopify_id
+  #       entity: user
+  #     - select: "anonymous_id"
+  #       type: anonymous_id
+  #       entity: user
+  #     - select: "cart_token"
+  #       type: token
+  #       entity: user
+  #     - select: "upper(email)"
+  #       type: email 
+  #       entity: user
+  # - name: iosPrdIdentifies
+  #   table: RUDDERSTACK_EVENTS.IOS_PRD.IDENTIFIES
+  #   occurred_at_col: timestamp
+  #   ids:
+  #     # - select: "user_id"
+  #     - select: "user_id"
+  #       type: user_id
+  #       entity: user
+  #     - select: "anonymous_id"
+  #       type: anonymous_id
+  #       entity: user
+  #     - select: "upper(email)"
+  #       type: email
+  #       entity: user
+  # - name: iosPrdTracks
+  #   table: RUDDERSTACK_EVENTS.IOS_PRD.TRACKS
+  #   occurred_at_col: timestamp
+  #   ids:
+  #     # - select: "user_id"
+  #     - select: "user_id"
+  #       type: user_id
+  #       entity: user
+  #     - select: "anonymous_id"
+  #       type: anonymous_id
+  #       entity: user
+  #     - select: "upper(CONTEXT_TRAITS_EMAIL)"
+  #       type: email
+  #       entity: user
+
+  # - name: androidPrdIdentifies
+  #   table: RUDDERSTACK_EVENTS.ANDROID_PRD.IDENTIFIES
+  #   occurred_at_col: timestamp
+  #   ids:
+  #     # - select: "user_id"
+  #     - select: "user_id"
+  #       type: user_id
+  #       entity: user
+  #     - select: "anonymous_id"
+  #       type: anonymous_id
+  #       entity: user
+  #     - select: "upper(email)"
+  #       type: email
+  #       entity: user
+
+  # - name: androidPrdTracks
+  #   table: RUDDERSTACK_EVENTS.ANDROID_PRD.TRACKS
+  #   occurred_at_col: timestamp
+  #   ids:
+  #     # - select: "user_id"
+  #     - select: "user_id"
+  #       type: user_id
+  #       entity: user
+  #     - select: "anonymous_id"
+  #       type: anonymous_id
+  #       entity: user
+  #     - select: "upper(CONTEXT_TRAITS_EMAIL)"
+  #       type: email
+  #       entity: user

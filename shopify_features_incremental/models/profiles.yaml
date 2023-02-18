@@ -1,6 +1,6 @@
 # This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
 models:
-  - name: shopify_user_id_stitcher
+  - name: shopify_id_stitcher_incremental
     model_type: id_stitcher
     model_spec:
       validity_time: 24h # 1 day
