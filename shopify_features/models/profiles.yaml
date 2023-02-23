@@ -501,7 +501,6 @@ models:
         - total_sessions_90_days
         - total_sessions_365_days
         - last_cart_status
-        - latest_cart_id
         - last_cart_value_in_dollars
         - transactions_in_past_1_days
         - transactions_in_past_90_days
