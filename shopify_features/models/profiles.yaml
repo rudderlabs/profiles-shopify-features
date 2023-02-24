@@ -384,12 +384,19 @@ models:
             select: array_agg(distinct product_id)
             from: inputs/rsCART_LINE_ITEMS
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
-        
+        - entityvar:
+            name: latest_cart_id
+            from: inputs/rsCART_LINE_ITEMS
+            select: first_value(token)
+            window:
+              order_by: 
+              - timestamp desc
 
         - entityvar:
             name: last_cart_value_in_dollars
             select: sum(line_price)
             from: inputs/rsCART_LINE_ITEMS
+            where: token=latest_cart_id
         - entityvar:
             name: last_cart_status
             select: min(coalesce(fulfillment_status, financial_status, 'abandoned'))
