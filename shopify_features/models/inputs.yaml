@@ -1,4 +1,3 @@
-# This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
 inputs:
   - name: rsIdentifies
     table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES 
