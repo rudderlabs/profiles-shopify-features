@@ -147,61 +147,61 @@ inputs:
   #     - select: "upper(email)"
   #       type: email 
   #       entity: user
-  # - name: iosPrdIdentifies
-  #   table: RUDDERSTACK_EVENTS.IOS_PRD.IDENTIFIES
-  #   occurred_at_col: timestamp
-  #   ids:
-  #     # - select: "user_id"
-  #     - select: "user_id"
-  #       type: user_id
-  #       entity: user
-  #     - select: "anonymous_id"
-  #       type: anonymous_id
-  #       entity: user
-  #     - select: "upper(email)"
-  #       type: email
-  #       entity: user
-  # - name: iosPrdTracks
-  #   table: RUDDERSTACK_EVENTS.IOS_PRD.TRACKS
-  #   occurred_at_col: timestamp
-  #   ids:
-  #     # - select: "user_id"
-  #     - select: "user_id"
-  #       type: user_id
-  #       entity: user
-  #     - select: "anonymous_id"
-  #       type: anonymous_id
-  #       entity: user
-  #     - select: "upper(CONTEXT_TRAITS_EMAIL)"
-  #       type: email
-  #       entity: user
+  - name: iosPrdIdentifies
+    table: RUDDERSTACK_EVENTS.IOS_PRD.IDENTIFIES
+    occurred_at_col: timestamp
+    ids:
+      # - select: "user_id"
+      - select: "user_id"
+        type: user_id
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+      - select: "upper(email)"
+        type: email
+        entity: user
+  - name: iosPrdTracks
+    table: RUDDERSTACK_EVENTS.IOS_PRD.TRACKS
+    occurred_at_col: timestamp
+    ids:
+      # - select: "user_id"
+      - select: "user_id"
+        type: user_id
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+      # - select: "upper(CONTEXT_TRAITS_EMAIL)"
+      #   type: email
+      #   entity: user
 
-  # - name: androidPrdIdentifies
-  #   table: RUDDERSTACK_EVENTS.ANDROID_PRD.IDENTIFIES
-  #   occurred_at_col: timestamp
-  #   ids:
-  #     # - select: "user_id"
-  #     - select: "user_id"
-  #       type: user_id
-  #       entity: user
-  #     - select: "anonymous_id"
-  #       type: anonymous_id
-  #       entity: user
-  #     - select: "upper(email)"
-  #       type: email
-  #       entity: user
+  - name: androidPrdIdentifies
+    table: RUDDERSTACK_EVENTS.ANDROID_PRD.IDENTIFIES
+    occurred_at_col: timestamp
+    ids:
+      # - select: "user_id"
+      - select: "user_id"
+        type: user_id
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+      - select: "upper(email)"
+        type: email
+        entity: user
 
-  # - name: androidPrdTracks
-  #   table: RUDDERSTACK_EVENTS.ANDROID_PRD.TRACKS
-  #   occurred_at_col: timestamp
-  #   ids:
-  #     # - select: "user_id"
-  #     - select: "user_id"
-  #       type: user_id
-  #       entity: user
-  #     - select: "anonymous_id"
-  #       type: anonymous_id
-  #       entity: user
-  #     - select: "upper(CONTEXT_TRAITS_EMAIL)"
-  #       type: email
-  #       entity: user
+  - name: androidPrdTracks
+    table: RUDDERSTACK_EVENTS.ANDROID_PRD.TRACKS
+    occurred_at_col: timestamp
+    ids:
+      # - select: "user_id"
+      - select: "user_id"
+        type: user_id
+        entity: user
+      - select: "anonymous_id"
+        type: anonymous_id
+        entity: user
+      # - select: "upper(CONTEXT_TRAITS_EMAIL)"
+      #   type: email
+      #   entity: user

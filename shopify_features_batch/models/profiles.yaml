@@ -1,6 +1,6 @@
 # This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
 models:
-  - name: shopify_id_stitcher_incremental
+  - name: shopify_id_stitcher_incremental_test1
     model_type: id_stitcher
     model_spec:
       validity_time: 24h # 1 day
@@ -14,10 +14,88 @@ models:
         - inputs/rsOrderCancelled
         - inputs/rsCartUpdate
         - inputs/rsCartCreate
-        - inputs/rsCartLineItems
+        - inputs/androidPrdTracks
+        - inputs/androidPrdIdentifies
+        - inputs/iosPrdIdentifies
+        # - inputs/rsCART_LINE_ITEMS
 
+  - name: WebTracksUnionAndroidTracksUnionIosTracks
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with webtracks = this.DeRef("inputs/rsTracks") iosPrdTracks = this.DeRef("inputs/iosPrdTracks")  androidPrdTracks= this.DeRef("inputs/androidPrdTracks") %}
+      
+           select user_id, anonymous_id, context_session_id, min(timestamp) as timestamp from {{webtracks}} group by user_id, anonymous_id, context_session_id
+            union all 
+            select user_id, anonymous_id, context_session_id, max(timestamp) as timestamp from {{webtracks}} group by user_id, anonymous_id, context_session_id
+            union all 
+            select user_id,anonymous_id,null as context_session_id, null as timestamp   from {{iosPrdTracks}} group by 1,2
+            union all 
+            select user_id,anonymous_id,null as context_session_id, null as timestamp from {{androidPrdTracks}} group by 1,2
+        {% endwith %}
+      ids:
+        - select: "user_id"
+          type: user_id
+          entity: user
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
+          
+  - name: WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with webIdentifies = this.DeRef("inputs/rsIdentifies") androidIdentifies = this.DeRef("inputs/androidPrdIdentifies")  iosIdentifies= this.DeRef("inputs/iosPrdIdentifies") %}
+            select user_id,anonymous_id,email,timestamp,first_name,null as context_device_type,state,address_country,last_name,currency,null as context_device_name,context_campaign_source,null as context_device_manufacturer from {{webIdentifies}}
+            union all 
+            select user_id,anonymous_id,email,timestamp,null as first_name,context_device_type,null as state,null as address_country,null as last_name,null as currency,context_device_name,null as context_campaign_source,context_device_manufacturer from {{androidIdentifies}}
+            union all 
+            select user_id,anonymous_id,email,timestamp,null as first_name,context_device_type,null as state,null as address_country,null as last_name,null as currency,context_device_name,null as context_campaign_source,context_device_manufacturer from {{iosIdentifies}}
+        {% endwith %}
+      ids:
+        - select: "user_id"
+          type: user_id
+          entity: user
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
+        - select: "upper(email)"
+          type: email
+          entity: user
+  - name: CartCreateUnionCartUpdate
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with CartCreate = this.DeRef("inputs/rsCartCreate") CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
+            select anonymous_id,timestamp,token from {{CartCreate}}
+            union all 
+            select anonymous_id,timestamp,token from {{CartUpdate}}
+        {% endwith %}
+      ids:
+    
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
+        - select: "token"
+          type: cart_token
+          entity: user
+   
+
+   
 # Remove the section below, if you don't want to generate a feature table
-  - name: shopify_user_features_incremental
+  - name: shopify_user_features_incremental_test1
     model_type: feature_table_model
     model_spec:
       validity_time: 24h # 1 day
@@ -25,88 +103,88 @@ models:
       vars:
        
         #total refund
-        - entityvar:
+        - entity_var:
             name: total_refund
             select: sum(total_price_usd ::real)
             from: inputs/rsOrderCancelled
             where: financial_status in ('paid','refunded','partially_refunded')
 
-        - entityvar:
+        - entity_var:
             name: max_timestamp_tracks
             select: max(timestamp)
-            from: inputs/rsTracks
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
 
-        - entityvar:
+        - entity_var:
             name: max_timestamp_pages
             select: max(timestamp)
             from: inputs/rsPages
 
 
-        - entityvar:
+        - entity_var:
             name: max_timestamp_bw_tracks_pages
             select: greatest(coalesce(max_timestamp_tracks,max_timestamp_pages),coalesce(max_timestamp_pages,max_timestamp_tracks))
         #days since last seen
-        - entityvar:
+        - entity_var:
             name: days_since_last_seen
             select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
 
    
 
         #has credit card
-        - entityvar:
+        - entity_var:
             name: has_credit_card
             select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
             from: inputs/rsOrderCreated   
         #refund count
-        - entityvar:
+        - entity_var:
             name: refund_count
             select: count(*)
             from: inputs/rsOrderCancelled
             where: financial_status in ('paid','refunded','partially_refunded')
          #avg_units_per_transaction
-        - entityvar:
+        - entity_var:
             name: total_units_across_transactions
             select: sum(array_size( parse_json(products)))
             from: inputs/rsOrderCreated
             where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
-        - entityvar:
+        - entity_var:
             name: total_transactions_units
             select: count(*)
             from: inputs/rsOrderCreated
             where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
         
-        - entityvar:
+        - entity_var:
             name: avg_units_per_transaction
             select: (total_units_across_transactions/total_transactions_units)::real
 
-        - entityvar:
+        - entity_var:
             name: total_value_across_transactions
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCreated
             where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
-        - entityvar:
+        - entity_var:
             name: total_transactions_value
             select: count(*)
             from: inputs/rsOrderCreated
             where: check_json(products) is null  # This check is to filter out invalid/broken jsons so the query doesn't throw an exception while doing parse_json 
         
-        - entityvar:
+        - entity_var:
             name: avg_transaction_value
             select: (total_value_across_transactions/total_transactions_value)::real
-        # #highest_transaction_value
-        - entityvar:
+        #highest_transaction_value
+        - entity_var:
             name: highest_transaction_value
             select: max(total_price_usd ::real)
             from: inputs/rsOrderCreated
-        - entityvar:
+        - entity_var:
             name: first_name
-            from: inputs/rsIdentifies
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
             select: first_value(first_name)
             window:
               order_by: 
               - timestamp desc
             where: first_name is not null and first_name!=''
-        - entityvar:
+        - entity_var:
             name: last_transaction_value
             from: inputs/rsOrderCreated
             select: first_value(total_price_usd)
@@ -114,12 +192,247 @@ models:
               order_by: 
               - case when TOTAL_PRICE_USD is not null then 2 else 1 end desc
               - timestamp desc
-        - entityvar:
+        - entity_var:
             name: total_products_added
             select: array_agg(distinct product_id)
             from: inputs/rsCartLineItems
-       
         
+
+        - entity_var:
+            name: is_churned_7_days
+            select: case when days_since_last_seen > 7 then 1 else 0 end
+        #days since last cart add
+        - entity_var:
+            name: max_timestamp_cart_update
+            select: max(timestamp)
+            from: inputs/rsCartUpdate
+        
+        - entity_var:
+            name: max_timestamp_cart_create
+            select: max(timestamp)
+            from: inputs/rsCartCreate
+
+        - entity_var:
+            name: max_timestamp_bw_cart_create_update
+            select: CASE WHEN max_timestamp_cart_update>=max_timestamp_cart_create THEN max_timestamp_cart_update ELSE max_timestamp_cart_create end
+
+       
+        - entity_var:
+            name: days_since_last_cart_add
+            select: datediff(day, date(max_timestamp_bw_cart_create_update), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+        - entity_var:
+            name: max_timestamp_order_created
+            select: max(timestamp)
+            from: inputs/rsOrderCreated
+        
+        - entity_var:
+            name: days_since_last_purchase
+            select: datediff(day, date(max_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+        - entity_var:
+            name: min_timestamp_order_created
+            select: min(timestamp)
+            from: inputs/rsOrderCreated
+        - entity_var:
+            name: days_since_first_purchase
+            select: datediff(day, date(min_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+        - entity_var:
+            name: median_transaction_value
+            select: median( total_price_usd ::real)
+            from: inputs/rsOrderCreated
+        - entity_var:
+            name: total_transactions
+            select: count(*)
+            from: inputs/rsOrderCreated
+        - entity_var:
+            name: total_refund_in_past_1_days
+            select: sum(total_price_usd::real)
+            from: inputs/rsOrderCancelled
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1 and financial_status in ('paid','refunded','partially_refunded')
+        - entity_var:
+            name: total_refund_in_past_7_days
+            select: sum(total_price_usd::real)
+            from: inputs/rsOrderCancelled
+            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
+   
+        - entity_var:
+            name: has_mobile_app
+            select: max(case when lower(context_device_type) in ('android', 'ios') then 1 else 0 end)
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+        - entity_var:
+            name: state
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(state)
+            window:
+              order_by: 
+              - timestamp desc
+            where: state is not null and state!=''
+        - entity_var:
+            name: country
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(address_country)
+            window:
+              order_by: 
+              - timestamp desc
+            where: address_country is not null and address_country!=''
+        - entity_var:
+            name: last_name
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(last_name)
+            window:
+              order_by: 
+              - timestamp desc
+            where: last_name is not null and last_name!=''
+        - entity_var:
+            name: currency
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(currency)
+            window:
+              order_by: 
+              - timestamp desc
+            where: currency is not null and currency!=''
+
+        - entity_var:
+            name: device_type
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(context_device_type)
+            window:
+              order_by: 
+              - timestamp desc
+            where: context_device_type is not null and context_device_type!=''
+        - entity_var:
+            name: device_name
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(context_device_name)
+            window:
+              order_by: 
+              - timestamp desc
+            where: context_device_name is not null and context_device_name!=''
+        - entity_var:
+            name: campaign_sources
+            select: array_agg( context_campaign_source )
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+        - entity_var:
+            name: is_active_on_website
+            select: max(case when lower(context_device_type) like '%pc' then 1 else 0 end)
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+        - entity_var:
+            name: device_manufacturer
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+            select: first_value(context_device_manufacturer)
+            window:
+              order_by: 
+              - timestamp desc
+            where: context_device_manufacturer is not null and context_device_manufacturer!='' 
+        - entity_var:
+            name: active_days_in_past_7_days
+            select: count(distinct date(timestamp))
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+        - entity_var:
+            name: days_since_account_creation
+            select: datediff(days,date(min(timestamp)),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+
+            from: models/WebIdentifiesUnionAndroidIdentifiesUnionIosIdentifies
+        - entity_var:
+            name: active_days_in_past_365_days
+            select: count(distinct date(timestamp))
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+        - input_var:
+            name: session_start_time
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: min(timestamp)
+            window:
+               partition_by:
+                  - context_session_id
+                  - main_id
+        - input_var:
+            name: session_end_time
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: max(timestamp)
+            window:
+               partition_by:
+                  - context_session_id
+                  - main_id
+        - input_var:
+            name: session_row_number
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: row_number()
+            window:
+                partition_by: 
+                   - context_session_id
+                   - main_id
+                order_by:
+                   - timestamp desc
+        - entity_var:
+            name: total_sessions_till_date
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: count(distinct context_session_id)
+            where: context_session_id is not null
+
+        - entity_var:
+            name: total_sessions_last_week
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: count(distinct context_session_id)
+            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+        - entity_var:
+            name: avg_session_length_in_sec_overall
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: avg(datediff(second, session_start_time, session_end_time))
+            where: session_row_number = 1 and context_session_id is not null
+        - entity_var:
+            name: first_seen_date
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: min(date(session_start_time))
+        - entity_var:
+            name: last_seen_date
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: max(date(session_end_time))
+        - entity_var:
+            name: carts_in_past_1_days
+            select: count(distinct token)
+            from: models/CartCreateUnionCartUpdate
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
+        - entity_var:
+            name: carts_in_past_7_days
+            select: count(distinct token)
+            from: models/CartCreateUnionCartUpdate
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+        - entity_var:
+            name: carts_in_past_365_days
+            select: count(distinct token)
+            from: models/CartCreateUnionCartUpdate
+            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+        - entity_var:
+            name: total_carts
+            select: count(distinct token)
+            from: models/CartCreateUnionCartUpdate
+
+      
+
+        # - entity_var:
+        #     name: products_added_in_past_1_days
+        #     select: array_agg(distinct product_id)
+        #     from: inputs/rsCART_LINE_ITEMS
+        #     where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
+        # - entity_var:
+        #     name: products_added_in_past_7_days
+        #     select: array_agg(distinct product_id)
+        #     from: inputs/rsCART_LINE_ITEMS
+        #     where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
+        # - entity_var:
+        #     name: products_added_in_past_365_days
+        #     select: array_agg(distinct product_id)
+        #     from: inputs/rsCART_LINE_ITEMS
+        #     where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
+        - entity_var:
+            name: avg_session_length_in_sec_last_week
+            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            select: avg(datediff(second, session_start_time, session_end_time))
+            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+ 
+
+
       features:
         - total_refund
         - max_timestamp_tracks
@@ -138,5 +451,37 @@ models:
         - first_name
         - last_transaction_value
         - total_products_added
-        
-        
+        - is_churned_7_days
+        - days_since_last_cart_add
+        - days_since_last_purchase
+        - days_since_first_purchase
+        - median_transaction_value
+        - total_transactions
+        - total_refund_in_past_1_days
+        - total_refund_in_past_7_days
+        - days_since_account_creation
+        - has_mobile_app
+        - state
+        - country
+        - last_name
+        - currency
+        - device_type
+        - device_name
+        - campaign_sources
+        - is_active_on_website
+        - device_manufacturer
+        - active_days_in_past_7_days
+        - active_days_in_past_365_days
+        - total_sessions_till_date
+        - total_sessions_last_week
+        - avg_session_length_in_sec_overall
+        - avg_session_length_in_sec_last_week
+        - first_seen_date
+        - last_seen_date
+        - carts_in_past_1_days
+        - carts_in_past_7_days
+        - carts_in_past_365_days
+        - total_carts
+        # - products_added_in_past_1_days
+        # - products_added_in_past_7_days
+        # - products_added_in_past_365_days

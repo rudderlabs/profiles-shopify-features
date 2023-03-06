@@ -101,13 +101,13 @@ inputs:
         entity: user
 
  
-  - name: rsCART_LINE_ITEMS
-    view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_LINE_ITEMS
-    occurred_at_col: timestamp
-    ids:
-      - select: "token"
-        type: cart_token
-        entity: user
-      - select: "anonymous_id"
-        type: anonymous_id
-        entity: user
+  # - name: rsCART_LINE_ITEMS
+  #   view: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_LINE_ITEMS
+  #   occurred_at_col: timestamp
+  #   ids:
+  #     - select: "token"
+  #       type: cart_token
+  #       entity: user
+  #     - select: "anonymous_id"
+  #       type: anonymous_id
+  #       entity: user
