@@ -14,10 +14,10 @@ models:
         - inputs/rsOrderCancelled
         - inputs/rsCartUpdate
         - inputs/rsCartCreate
-        - inputs/androidPrdTracks
-        - inputs/androidPrdIdentifies
-        - inputs/iosPrdIdentifies
-        # - inputs/rsCART_LINE_ITEMS
+        # - inputs/androidPrdTracks
+        # - inputs/androidPrdIdentifies
+        # - inputs/iosPrdIdentifies
+        # - inputs/iosPrdIdentifies
 
   - name: WebTracksUnionAndroidTracksUnionIosTracks
     model_type: sql_template
@@ -27,15 +27,12 @@ models:
         output_type: ephemeral
         run_type: discrete
       single_sql: |
-        {% with webtracks = this.DeRef("inputs/rsTracks") iosPrdTracks = this.DeRef("inputs/iosPrdTracks")  androidPrdTracks= this.DeRef("inputs/androidPrdTracks") %}
+        {% with webtracks = this.DeRef("inputs/rsTracks") %}
       
-           select user_id, anonymous_id, context_session_id, min(timestamp) as timestamp from {{webtracks}} group by user_id, anonymous_id, context_session_id
+           select user_id, anonymous_id, context_session_id, timestamp from 
+            (select user_id, anonymous_id, context_session_id, timestamp::date as dt, min(timestamp) as timestamp from {{webtracks}} group by user_id, anonymous_id, context_session_id, timestamp::date
             union all 
-            select user_id, anonymous_id, context_session_id, max(timestamp) as timestamp from {{webtracks}} group by user_id, anonymous_id, context_session_id
-            union all 
-            select user_id,anonymous_id,null as context_session_id, null as timestamp   from {{iosPrdTracks}} group by 1,2
-            union all 
-            select user_id,anonymous_id,null as context_session_id, null as timestamp from {{androidPrdTracks}} group by 1,2
+            select user_id, anonymous_id, context_session_id, timestamp::date as dt, max(timestamp) as timestamp from {{webtracks}} group by user_id, anonymous_id, context_session_id, timestamp::date) a 
         {% endwith %}
       ids:
         - select: "user_id"
@@ -53,12 +50,8 @@ models:
         output_type: ephemeral
         run_type: discrete
       single_sql: |
-        {% with webIdentifies = this.DeRef("inputs/rsIdentifies") androidIdentifies = this.DeRef("inputs/androidPrdIdentifies")  iosIdentifies= this.DeRef("inputs/iosPrdIdentifies") %}
+        {% with webIdentifies = this.DeRef("inputs/rsIdentifies")  %}
             select user_id,anonymous_id,email,timestamp,first_name,null as context_device_type,state,address_country,last_name,currency,null as context_device_name,context_campaign_source,null as context_device_manufacturer from {{webIdentifies}}
-            union all 
-            select user_id,anonymous_id,email,timestamp,null as first_name,context_device_type,null as state,null as address_country,null as last_name,null as currency,context_device_name,null as context_campaign_source,context_device_manufacturer from {{androidIdentifies}}
-            union all 
-            select user_id,anonymous_id,email,timestamp,null as first_name,context_device_type,null as state,null as address_country,null as last_name,null as currency,context_device_name,null as context_campaign_source,context_device_manufacturer from {{iosIdentifies}}
         {% endwith %}
       ids:
         - select: "user_id"
@@ -91,7 +84,52 @@ models:
         - select: "token"
           type: cart_token
           entity: user
-   
+  - name: CartLineItems
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
+        
+        SELECT to_char(t.value['brand']) AS brand,
+            t.value['discounted_price']::real AS discounted_price,
+            to_char(t.value['gift_card']) AS gift_card,
+            t.value['grams']::real AS grams,
+            to_char(t.value['id']) AS id,
+            to_char(t.value['key']) AS KEY,
+            t.value['line_price']::real AS line_price,
+            t.value['original_line_price']::real AS original_line_price,
+            t.value['original_price']::real AS original_price,
+            t.value['price']::real AS price,
+            to_char(t.value['product_id']) AS product_id,
+            to_char(t.value['properties']) AS properties,
+            t.value['quantity']::real AS quantity,
+            to_char(t.value['sku']) AS sku,
+            to_char(t.value['taxable']) AS taxable,
+            to_char(t.value['title']) AS title,
+            t.value['total_discount']::real AS total_discount,
+            to_char(t.value['variant']) AS _VARIANT_,
+            products,
+            anonymous_id,timestamp, token
+        FROM
+        (SELECT *
+        FROM
+            (SELECT *,
+                    row_number() over(PARTITION BY anonymous_id, token
+                                                ORDER BY timestamp DESC) AS rn
+            FROM {{CartUpdate}} where products is not null)
+        WHERE rn = 1), table(flatten(parse_json(products))) t
+                {% endwith %}
+      ids:
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
+        - select: "token"
+          type: cart_token
+          entity: user
 
    
 # Remove the section below, if you don't want to generate a feature table
@@ -195,7 +233,7 @@ models:
         - entity_var:
             name: total_products_added
             select: array_agg(distinct product_id)
-            from: inputs/rsCartLineItems
+            from: models/CartLineItems
         
 
         - entity_var:
@@ -326,7 +364,7 @@ models:
         - entity_var:
             name: active_days_in_past_7_days
             select: count(distinct date(timestamp))
-            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            from: inputs/rsPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
         - entity_var:
             name: days_since_account_creation
@@ -336,7 +374,7 @@ models:
         - entity_var:
             name: active_days_in_past_365_days
             select: count(distinct date(timestamp))
-            from: models/WebTracksUnionAndroidTracksUnionIosTracks
+            from: inputs/rsPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
         - input_var:
             name: session_start_time
@@ -382,12 +420,12 @@ models:
             where: session_row_number = 1 and context_session_id is not null
         - entity_var:
             name: first_seen_date
-            from: models/WebTracksUnionAndroidTracksUnionIosTracks
-            select: min(date(session_start_time))
+            from: inputs/rsPages
+            select: min(timestamp)
         - entity_var:
             name: last_seen_date
-            from: models/WebTracksUnionAndroidTracksUnionIosTracks
-            select: max(date(session_end_time))
+            from: inputs/rsPages
+            select: max(timestamp)
         - entity_var:
             name: carts_in_past_1_days
             select: count(distinct token)
@@ -410,21 +448,21 @@ models:
 
       
 
-        # - entity_var:
-        #     name: products_added_in_past_1_days
-        #     select: array_agg(distinct product_id)
-        #     from: inputs/rsCART_LINE_ITEMS
-        #     where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
-        # - entity_var:
-        #     name: products_added_in_past_7_days
-        #     select: array_agg(distinct product_id)
-        #     from: inputs/rsCART_LINE_ITEMS
-        #     where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
-        # - entity_var:
-        #     name: products_added_in_past_365_days
-        #     select: array_agg(distinct product_id)
-        #     from: inputs/rsCART_LINE_ITEMS
-        #     where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
+        - entity_var:
+            name: products_added_in_past_1_days
+            select: array_agg(distinct product_id)
+            from: models/CartLineItems
+            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
+        - entity_var:
+            name: products_added_in_past_7_days
+            select: array_agg(distinct product_id)
+            from: models/CartLineItems
+            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
+        - entity_var:
+            name: products_added_in_past_365_days
+            select: array_agg(distinct product_id)
+            from: models/CartLineItems
+            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
         - entity_var:
             name: avg_session_length_in_sec_last_week
             from: models/WebTracksUnionAndroidTracksUnionIosTracks
@@ -482,6 +520,6 @@ models:
         - carts_in_past_7_days
         - carts_in_past_365_days
         - total_carts
-        # - products_added_in_past_1_days
-        # - products_added_in_past_7_days
-        # - products_added_in_past_365_days
+        - products_added_in_past_1_days
+        - products_added_in_past_7_days
+        - products_added_in_past_365_days
