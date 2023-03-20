@@ -5,8 +5,6 @@ This is PB repo to create user features from Shopify event stream tables created
 
 ## How to Use
 
-Prerequisite: There are a few views in the ```views/``` directory. They are supposed to be created in the warehouse before the project is run. Each sql file in the views directory correspond to one view. Run them in the same schema where your input tables exist.
-
 After installing PB and configuring your connections profile, you need to change inputs.yaml with names of your source tables. Once that is done, please mention their names as edge_sources in profiles.yaml and define specs for creating ID stitcher / feature table. 
 
 Use this command to validate that your project shall be able to access the warehouse specified in connections profile and create material objects there.

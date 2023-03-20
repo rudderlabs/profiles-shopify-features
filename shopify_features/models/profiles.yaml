@@ -15,7 +15,7 @@ models:
         - from: inputs/rsCartUpdate
         - from: inputs/rsCartCreate
    
-  - name: CartCreateUnionCartUpdate
+  - name: rsCartCreateUnionCartUpdate
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
@@ -34,7 +34,7 @@ models:
           type: anonymous_id
           entity: user
     
-  - name: TracksUnionPages
+  - name: rsTracksUnionPages
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
@@ -44,14 +44,14 @@ models:
       single_sql: |
         {% with Tracks = this.DeRef("inputs/rsTracks") Pages = this.DeRef("inputs/rsPages") %}
             select user_id, anonymous_id, context_session_id, timestamp from (
-            select ANONYMOUS_ID,USER_ID,timestamp::date as dt, min(timestamp) as timestamp,CONTEXT_SESSION_ID from {{Tracks}} group by user_id, anonymous_id, context_session_id, timestamp::date
+            select ANONYMOUS_ID,USER_ID,timestamp::date as dt,CONTEXT_SESSION_ID,min(timestamp) as timestamp from {{Tracks}} group by user_id, anonymous_id, context_session_id, timestamp::date
             union all 
-            select ANONYMOUS_ID,USER_ID,timestamp::date as dt, max(timestamp) as timestamp,CONTEXT_SESSION_ID from {{Tracks}} group by user_id, anonymous_id, context_session_id, timestamp::date) a
+            select ANONYMOUS_ID,USER_ID,timestamp::date as dt,CONTEXT_SESSION_ID,max(timestamp) as timestamp from {{Tracks}} group by user_id, anonymous_id, context_session_id, timestamp::date) a
             union all
             select user_id, anonymous_id, context_session_id, timestamp from        
-            (select ANONYMOUS_ID,USER_ID,timestamp::date as dt, min(timestamp) as timestamp,CONTEXT_SESSION_ID from {{Pages}} group by user_id, anonymous_id, context_session_id, timestamp::date
+            (select ANONYMOUS_ID,USER_ID,timestamp::date as dt,CONTEXT_SESSION_ID,min(timestamp) as timestamp from {{Pages}} group by user_id, anonymous_id, context_session_id, timestamp::date
             union all 
-            select ANONYMOUS_ID,USER_ID,timestamp::date as dt, max(timestamp) as timestamp,CONTEXT_SESSION_ID from {{Pages}} group by user_id, anonymous_id, context_session_id, timestamp::date) 
+            select ANONYMOUS_ID,USER_ID,timestamp::date as dt,CONTEXT_SESSION_ID,max(timestamp) as timestamp from {{Pages}} group by user_id, anonymous_id, context_session_id, timestamp::date) 
         {% endwith %}
       ids:
     
@@ -61,7 +61,7 @@ models:
         - select: "user_id"
           type: user_id
           entity: user
-  - name: ItemsPurchasedEver
+  - name: rsItemsPurchasedEver
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
@@ -92,7 +92,7 @@ models:
          type: anonymous_id
          entity: user
      
-  - name: OrderCreatedOrderCancelled
+  - name: rsOrderCreatedOrderCancelled
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
@@ -137,7 +137,7 @@ models:
         - select: "cart_token"
           type: cart_token
           entity: user
-  - name: CartLineItems
+  - name: rsCartLineItems
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
@@ -181,7 +181,7 @@ models:
           type: anonymous_id
           entity: user
        
-  - name: LastCartStatus
+  - name: rsLastCartStatus
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
@@ -189,7 +189,7 @@ models:
         output_type: table
         run_type: discrete
       multi_sql: |
-        {% with CartLineItems = this.DeRef("models/CartLineItems") OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
+        {% with rsCartLineItems = this.DeRef("models/rsCartLineItems") OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
          create {{this.GetMaterialization().OutputType.ToSql()}} {{this.Name()}} as (
           with cte as (
           select cli.BRAND,
@@ -224,7 +224,7 @@ models:
           oc.CART_TOKEN,
           oc.FULFILLMENT_STATUS,
           oc.FINANCIAL_STATUS
-          from {{CartLineItems}} cli
+          from {{rsCartLineItems}} cli
           left outer join {{OrderCreated}} oc on cli.token = oc.cart_token)
           Select * from cte);
         {% endwith %}
@@ -467,17 +467,17 @@ models:
         - entity_var:
             name: active_days_in_past_7_days
             select: count(distinct date(timestamp))
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
         
         - entity_var:
             name: active_days_in_past_365_days
             select: count(distinct date(timestamp))
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
         - input_var:
             name: session_start_time
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: min(timestamp)
             window:
                partition_by:
@@ -485,7 +485,7 @@ models:
                   - main_id
         - input_var:
             name: session_end_time
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: max(timestamp)
             window:
                partition_by:
@@ -493,7 +493,7 @@ models:
                   - main_id
         - input_var:
             name: session_row_number
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: row_number()
             window:
                 partition_by: 
@@ -503,71 +503,71 @@ models:
                    - timestamp desc
         - entity_var:
             name: total_sessions_till_date
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null
 
         - entity_var:
             name: total_sessions_last_week
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
         - entity_var:
             name: total_sessions_90_days
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 90
         - entity_var:
             name: total_sessions_365_days
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 365
 
         - entity_var:
             name: avg_session_length_in_sec_overall
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: session_row_number = 1 and context_session_id is not null
 
 
         - entity_var:
             name: avg_session_length_in_sec_last_week
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
         - entity_var:
             name: avg_session_length_in_sec_365_days
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
 
         - entity_var:
             name: first_seen_date
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: min(date(session_start_time))
         - entity_var:
             name: last_seen_date
-            from: models/TracksUnionPages
+            from: models/rsTracksUnionPages
             select: max(date(session_end_time))
         - entity_var:
             name: carts_in_past_1_days
             select: count(distinct token)
-            from: models/CartCreateUnionCartUpdate
+            from: models/rsCartCreateUnionCartUpdate
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
         - entity_var:
             name: carts_in_past_7_days
             select: count(distinct token)
-            from: models/CartCreateUnionCartUpdate
+            from: models/rsCartCreateUnionCartUpdate
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
         - entity_var:
             name: carts_in_past_365_days
             select: count(distinct token)
-            from: models/CartCreateUnionCartUpdate
+            from: models/rsCartCreateUnionCartUpdate
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
         - entity_var:
             name: total_carts
             select: count(distinct token)
-            from: models/CartCreateUnionCartUpdate
+            from: models/rsCartCreateUnionCartUpdate
 
         
         - entity_var:
@@ -583,26 +583,26 @@ models:
         - entity_var:
             name: total_products_added
             select: array_agg(distinct product_id)
-            from: models/CartLineItems
+            from: models/rsCartLineItems
 
         - entity_var:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
-            from: models/CartLineItems
+            from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
         - entity_var:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
-            from: models/CartLineItems
+            from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
         - entity_var:
             name: products_added_in_past_365_days
             select: array_agg(distinct product_id)
-            from: models/CartLineItems
+            from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
         - entity_var:
             name: latest_cart_id
-            from: models/CartLineItems
+            from: models/rsCartLineItems
             select: first_value(token)
             window:
               order_by: 
@@ -611,58 +611,58 @@ models:
         - entity_var:
             name: last_cart_value_in_dollars
             select: sum(line_price)
-            from: models/CartLineItems
+            from: models/rsCartLineItems
             where: token=latest_cart_id
         - entity_var:
             name: last_cart_status
             select: min(coalesce(fulfillment_status, financial_status, 'abandoned'))
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
         - entity_var:
             name: transactions_in_past_1_days
             select: count(*)::real
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1
 
         - entity_var:
             name: transactions_in_past_90_days
             select: count(*)::real
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=90
 
         - entity_var:
             name: transactions_in_past_365_days
             select: count(*)::real
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
         - entity_var:
             name: net_amt_spent_in_past_90_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=90
 
         - entity_var:
             name: net_amt_spent_in_past_365_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
 
         - entity_var:
             name: net_amt_spent_in_past_1_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1
         - entity_var:
             name: net_amt_spent_in_past
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
         - entity_var:
             name: gross_amt_spent_in_past
             select: sum(total_price_usd::real)
-            from: models/OrderCreatedOrderCancelled
+            from: models/rsOrderCreatedOrderCancelled
         - entity_var:
             name: items_purchased_ever
             select: array_agg(sku)
-            from: models/ItemsPurchasedEver
+            from: models/rsItemsPurchasedEver
     
 
 
