@@ -7,13 +7,13 @@ models:
       entity_key: user
       main_id_type: main_id
       edge_sources:
-        - inputs/rsIdentifies
-        - inputs/rsTracks
-        - inputs/rsPages
-        - inputs/rsOrderCreated
-        - inputs/rsOrderCancelled
-        - inputs/rsCartUpdate
-        - inputs/rsCartCreate
+        - from: inputs/rsIdentifies
+        - from: inputs/rsTracks
+        - from: inputs/rsPages
+        - from: inputs/rsOrderCreated
+        - from: inputs/rsOrderCancelled
+        - from: inputs/rsCartUpdate
+        - from: inputs/rsCartCreate
 
 
  
