@@ -267,7 +267,7 @@ models:
         - entity_var:
             name: is_churned_7_days
             select: case when days_since_last_seen > 7 then 1 else 0 end
-        
+            description: it specifies if there is any activity observed in the last n days. It is dependent on days_since_last_seen
         #days since last cart add
         - entity_var:
             name: max_timestamp_cart_update
@@ -286,21 +286,21 @@ models:
         - entity_var:
             name: days_since_last_cart_add
             select: datediff(day, date(max_timestamp_bw_cart_create_update), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
-       
+            description: Number of days since the user has added a product to cart
         #total refund
         - entity_var:
             name: total_refund
             select: sum(total_price_usd ::real)
             from: inputs/rsOrderCancelled
             where: financial_status in ('paid','refunded','partially_refunded')
-
+            description: Total refund for a particular user to date.
         #refund count
         - entity_var:
             name: refund_count
             select: count(*)
             from: inputs/rsOrderCancelled
             where: financial_status in ('paid','refunded','partially_refunded')
-
+            description: The total number of times an order has been cancelled by a user and has been refunded
     #days since last purchase
         
         - entity_var:
@@ -311,6 +311,7 @@ models:
         - entity_var:
             name: days_since_last_purchase
             select: datediff(day, date(max_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            description: Number of days since the user purchased the latest product
     #days since first purchase
 
         - entity_var:
@@ -321,42 +322,47 @@ models:
         - entity_var:
             name: days_since_first_purchase
             select: datediff(day, date(min_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
-
+            description: Number of days since the user purchased the first product
     #has credit card
         - entity_var:
             name: has_credit_card
             select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
             from: inputs/rsOrderCreated
-
+            description: If the user has a credit card.
     #avg_units_per_transaction
         - entity_var:
             name: avg_units_per_transaction
             select: avg({{ array_size ( 'products' )}}::real)
             from: inputs/rsOrderCreated
+            description: It shows the average units purchased in each transaction. (Total units in each transaction/Total transactions). Includes only those transactions where the total price (from column current_total_price) is greater than zero. So, the feature exclude transactions with 100% off, replacement products etc that may result in the total_price being equal to zero.
 
     #avg_transaction_value
         - entity_var:
             name: avg_transaction_value
             select: avg( total_price_usd ::real)
             from: inputs/rsOrderCreated
+            description: Total price in each transaction/Total number of transactions.
 
     #highest_transaction_value
         - entity_var:
             name: highest_transaction_value
             select: max(total_price_usd ::real)
             from: inputs/rsOrderCreated
+            description: Of all the transactions done by the user, this features contains the highest transaction value.
 
     #median_transaction_value   
         - entity_var:
             name: median_transaction_value
             select: median( total_price_usd ::real)
             from: inputs/rsOrderCreated
+            description: Median value of total price of all the transactions
 
     #total_transactions
         - entity_var:
             name: total_transactions
             select: count(*)
             from: inputs/rsOrderCreated
+            description: Total number of transactions done by the user
 
     #total_refund_in_past_1_days
         - entity_var:
@@ -364,13 +370,14 @@ models:
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1 and financial_status in ('paid','refunded','partially_refunded')
+            description: Total refund for a particular user in last 1 day
     #total_refund_in_past_7_days
         - entity_var:
             name: total_refund_in_past_7_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
-        
+            description: Total refund for a particular user in last 1 day
        
         
         - entity_var:
@@ -469,12 +476,13 @@ models:
             select: count(distinct date(timestamp))
             from: models/rsTracksUnionPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
-        
+            description: out of 7 days, how many days have recorded an event till date (including today's date)
         - entity_var:
             name: active_days_in_past_365_days
             select: count(distinct date(timestamp))
             from: models/rsTracksUnionPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            description: out of 7 days, how many days have recorded an event till date (including today's date)
         - input_var:
             name: session_start_time
             from: models/rsTracksUnionPages
@@ -483,6 +491,7 @@ models:
                partition_by:
                   - context_session_id
                   - main_id
+            description: Describes the start time of session of a specific context_id
         - input_var:
             name: session_end_time
             from: models/rsTracksUnionPages
@@ -491,6 +500,8 @@ models:
                partition_by:
                   - context_session_id
                   - main_id
+            description: Describes the end time of session of a specific context_id
+            
         - input_var:
             name: session_row_number
             from: models/rsTracksUnionPages
@@ -501,73 +512,86 @@ models:
                    - main_id
                 order_by:
                    - timestamp desc
+            description: Partition the data based on main_ids and context_session_id and order them by timestamp. Assign row number to partitioned data
         - entity_var:
             name: total_sessions_till_date
             from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null
-
+            description: Total individual sessions created till date.
         - entity_var:
             name: total_sessions_last_week
             from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            description:  total number of sessions over last 7 days.
         - entity_var:
             name: total_sessions_90_days
             from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 90
+            description:  total number of sessions over last 90 days.
         - entity_var:
             name: total_sessions_365_days
             from: models/rsTracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 365
-
+            description:  total number of sessions over last 365 days.
         - entity_var:
             name: avg_session_length_in_sec_overall
             from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: session_row_number = 1 and context_session_id is not null
-
+            description: The average duration of session time till date i.e. sum of session duration till date / total number of sessions till date.
 
         - entity_var:
             name: avg_session_length_in_sec_last_week
             from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            description: the average duration of session time in the last 7 days i.e. sum of session duration over n days/ total number of sessions over last 7 days.
         - entity_var:
             name: avg_session_length_in_sec_365_days
             from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+            description: the average duration of session time in the last 365 days i.e. sum of session duration over n days/ total number of sessions over last 7 days.
 
         - entity_var:
             name: first_seen_date
             from: models/rsTracksUnionPages
             select: min(date(session_start_time))
+            description: The first date on which an event has been recorded by the user
         - entity_var:
             name: last_seen_date
             from: models/rsTracksUnionPages
             select: max(date(session_end_time))
+            description: The latest date on which an event has been recorded by the user
         - entity_var:
             name: carts_in_past_1_days
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
+            description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days
         - entity_var:
             name: carts_in_past_7_days
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+            description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days
+            
         - entity_var:
             name: carts_in_past_365_days
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days
+
         - entity_var:
             name: total_carts
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
+            description: Total carts created by the user till date.
 
         
         - entity_var:
@@ -578,28 +602,33 @@ models:
               order_by: 
               - case when TOTAL_PRICE_USD is not null then 2 else 1 end desc
               - timestamp desc
+            description: The total value of products that are part of the last transaction.
 
         
         - entity_var:
             name: total_products_added
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-
+            description: Total products added till date. (array with list of all product ids)
         - entity_var:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
+            description: Number of products added by the user in last 1 days
         - entity_var:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
+            description: Number of products added by the user in last 7 days
+
         - entity_var:
             name: products_added_in_past_365_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
+            description: Number of products added by the user in last 365 days
         - entity_var:
             name: latest_cart_id
             from: models/rsCartLineItems
@@ -613,61 +642,68 @@ models:
             select: sum(line_price)
             from: models/rsCartLineItems
             where: token=latest_cart_id
+            description: The value of products added in the latest cart.
         - entity_var:
             name: last_cart_status
             select: min(coalesce(fulfillment_status, financial_status, 'abandoned'))
             from: models/rsOrderCreatedOrderCancelled
+            description: Status of latest cart whether it is fulfilled or paid or abandoned
         - entity_var:
             name: transactions_in_past_1_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1
-
+            description:  Number of transactions in last 1 day
         - entity_var:
             name: transactions_in_past_90_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=90
+            description:  Number of transactions in last 90 day
 
         - entity_var:
             name: transactions_in_past_365_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+            description:  Number of transactions in last 365 day
+
         - entity_var:
             name: net_amt_spent_in_past_90_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=90
-
+            description: Net amount i.e. sales-refund spent by the user in last 90 days.
         - entity_var:
             name: net_amt_spent_in_past_365_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+            description: Net amount i.e. sales-refund spent by the user in last 365 days.
 
         - entity_var:
             name: net_amt_spent_in_past_1_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
             where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1
+            description: Net amount i.e. sales-refund spent by the user in last 1 day.
+
         - entity_var:
             name: net_amt_spent_in_past
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
+            description: Net amount i.e. sales-refund spent by the user to date.
         - entity_var:
             name: gross_amt_spent_in_past
             select: sum(total_price_usd::real)
             from: models/rsOrderCreatedOrderCancelled
+            description: Total value of products purchased till date.
         - entity_var:
             name: items_purchased_ever
             select: array_agg(sku)
             from: models/rsItemsPurchasedEver
+            description: The list of unique products bought by the user. 
     
-
-
-
-
       features:
         - days_since_last_seen
         - is_churned_7_days
