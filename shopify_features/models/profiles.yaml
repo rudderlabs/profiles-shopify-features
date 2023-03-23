@@ -512,7 +512,7 @@ models:
                    - main_id
                 order_by:
                    - timestamp desc
-            description: Partition the data based on main_ids and context_session_id and order them by timestamp. Assign row number to partitioned data
+            description: A row number for all the events within a single session. This is used to compute some of the session based features
         - entity_var:
             name: total_sessions_till_date
             from: models/rsTracksUnionPages
@@ -542,20 +542,24 @@ models:
             from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: session_row_number = 1 and context_session_id is not null
-            description: The average duration of session time till date i.e. sum of session duration till date / total number of sessions till date.
+            description: Average session length (in seconds) of all the user sessions till date.
 
         - entity_var:
             name: avg_session_length_in_sec_last_week
             from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
-            description: the average duration of session time in the last 7 days i.e. sum of session duration over n days/ total number of sessions over last 7 days.
+            description: Average session length (in seconds) of all the user sessions that started in last 7 days
+
+
         - entity_var:
             name: avg_session_length_in_sec_365_days
             from: models/rsTracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
             where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
-            description: the average duration of session time in the last 365 days i.e. sum of session duration over n days/ total number of sessions over last 7 days.
+            description: Average session length (in seconds) of all the user sessions that started in last 365 days
+
+
 
         - entity_var:
             name: first_seen_date
@@ -609,26 +613,26 @@ models:
             name: total_products_added
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            description: Total products added till date. (array with list of all product ids)
+            description: Total products added to cart till date. (array with list of all product ids). It includes all purchased products plus current active cart.
         - entity_var:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
-            description: Number of products added by the user in last 1 days
+            description: List of products added to cart by the user in last 1 days. (array with list of all product ids). It includes all purchased products plus current active cart.
         - entity_var:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
-            description: Number of products added by the user in last 7 days
+            description: List of products added to cart by the user in last 7 days. (array with list of all product ids). It includes all purchased products plus current active cart.
 
         - entity_var:
             name: products_added_in_past_365_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
             where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
-            description: Number of products added by the user in last 365 days
+            description: List of products added to cart by the user in last 365 days. (array with list of all product ids). It includes all purchased products plus current active cart.
         - entity_var:
             name: latest_cart_id
             from: models/rsCartLineItems
