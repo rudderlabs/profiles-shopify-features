@@ -61,27 +61,44 @@ models:
         - select: "user_id"
           type: user_id
           entity: user
+
+  - name: rsItemsPurchasedEverSku
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
+          select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
+            from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
+        {% endwith %}
+  - name: rsItemsPurchasedEverCte
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with sku = this.DeRef("models/rsItemsPurchasedEverSku") %}
+         SELECT * , row_number() OVER (PARTITION BY token ORDER BY timestamp DESC) AS rn
+            FROM   {{sku}}
+          {% endwith %}
   - name: rsItemsPurchasedEver
     model_type: sql_template
     model_spec:
       validity_time: 24h # 1 day
       materialization:
-        output_type: table
+        output_type: ephemeral
         run_type: discrete
-      multi_sql: |
-        {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
-         create {{this.GetMaterialization().OutputType.ToSql()}} {{this.Name()}} as (
-            with sku as (select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
-            from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null),
-
-            cte AS (
+      single_sql: |
+        {% with cte = this.DeRef("models/rsItemsPurchasedEverCte") %}
+    
             SELECT *
-                    , row_number() OVER (PARTITION BY token ORDER BY timestamp DESC) AS rn
-            FROM   sku
-            )
-            SELECT *
-            FROM   cte
-            WHERE  rn = 1);
+            FROM   {{cte}}
+            WHERE  rn = 1
             {% endwith %}
       ids:
     
@@ -97,13 +114,11 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       materialization:
-        output_type: table
+        output_type: ephemeral
         run_type: discrete
-      multi_sql: |
+      single_sql: |
         {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") OrderCancelled = this.DeRef("inputs/rsOrderCancelled") %}
-            create {{this.GetMaterialization().OutputType.ToSql()}} {{this.Name()}} as (
-            with order_status as  
-            (select 
+            select 
             a.ANONYMOUS_ID,
             a.user_id,
             a.total_price_usd,
@@ -123,8 +138,8 @@ models:
             b.timestamp as timestamp_order_cancelled,
             b.products as products_order_cancelled 
             from {{OrderCreated}} a left join {{OrderCancelled}} b 
-            on a.user_id = b.user_id and a.order_number = b.order_number)
-            select * from order_status);
+            on a.user_id = b.user_id and a.order_number = b.order_number
+         
                {% endwith %}
       ids:
     
@@ -186,12 +201,10 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       materialization:
-        output_type: table
+        output_type: ephemeral
         run_type: discrete
-      multi_sql: |
+      single_sql: |
         {% with rsCartLineItems = this.DeRef("models/rsCartLineItems") OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
-         create {{this.GetMaterialization().OutputType.ToSql()}} {{this.Name()}} as (
-          with cte as (
           select cli.BRAND,
           cli.DISCOUNTED_PRICE,
           cli.GIFT_CARD,
@@ -225,8 +238,7 @@ models:
           oc.FULFILLMENT_STATUS,
           oc.FINANCIAL_STATUS
           from {{rsCartLineItems}} cli
-          left outer join {{OrderCreated}} oc on cli.token = oc.cart_token)
-          Select * from cte);
+          left outer join {{OrderCreated}} oc on cli.token = oc.cart_token
         {% endwith %}
       ids:
     
