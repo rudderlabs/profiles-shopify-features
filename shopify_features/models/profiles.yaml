@@ -1,11 +1,9 @@
-
 models:
   - name: shopify_user_id_stitcher
     model_type: id_stitcher
     model_spec:
       validity_time: 24h # 1 day
       entity_key: user
-      main_id_type: main_id
       edge_sources:
         - from: inputs/rsIdentifies
         - from: inputs/rsTracks
@@ -270,7 +268,7 @@ models:
             window:
                partition_by:
                   - context_session_id
-                  - main_id
+                  - "{{main_id}}"
             description: Describes the start time of session of a specific context_id
         - input_var:
             name: session_end_time
@@ -279,7 +277,7 @@ models:
             window:
                partition_by:
                   - context_session_id
-                  - main_id
+                  - "{{main_id}}"
             description: Describes the end time of session of a specific context_id
             
         - input_var:
@@ -289,7 +287,7 @@ models:
             window:
                 partition_by: 
                    - context_session_id
-                   - main_id
+                   - "{{main_id}}"
                 order_by:
                    - timestamp desc
             description: A row number for all the events within a single session. This is used to compute some of the session based features
