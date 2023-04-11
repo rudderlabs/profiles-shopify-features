@@ -12,11 +12,53 @@ models:
         - from: inputs/rsOrderCancelled
         - from: inputs/rsCartUpdate
         - from: inputs/rsCartCreate
-   
+  - name: shopify_session_id_stitcher
+    model_type: id_stitcher
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: session
+      main_id_type: session_main_id
+      edge_sources:
+        - from: inputs/rsPages
 
-      
+  
    
 # Remove the section below, if you don't want to generate a feature table
+  - name: shopify_session_features
+    model_type: feature_table_model
+    model_spec:
+      validity_time: 24h # 1 day
+      entity_key: session
+      vars:
+        - entity_var:
+            name: session_end_time
+            select: max(timestamp)    
+            from: inputs/rsPages     
+        - entity_var: 
+            name: session_start_time
+            select: min(timestamp)
+            from: inputs/rsPages
+        - entity_var: 
+            name: session_length
+            select: TIMESTAMPDIFF(SECOND, session_start_time, session_end_time) 
+        - entity_var: 
+            name: user_id
+            select: max(user_id)
+            where: user_id is not null
+            from: inputs/rsPages
+        - entity_var: 
+            name: anonymous_id
+            select: max(anonymous_id)
+            where: anonymous_id is not null
+            from: inputs/rsPages
+      features:
+        - session_end_time
+        - session_start_time
+        - session_length
+        - user_id
+        - anonymous_id
+
+
   - name: shopify_user_features
     model_type: feature_table_model
     model_spec:
@@ -261,94 +303,58 @@ models:
             from: models/rsTracksUnionPages
             where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
             description: out of 7 days, how many days have recorded an event till date including todays date
-        - input_var:
-            name: session_start_time
-            from: models/rsTracksUnionPages
-            select: min(timestamp)
-            window:
-               partition_by:
-                  - context_session_id
-                  - "{{main_id}}"
-            description: Describes the start time of session of a specific context_id
-        - input_var:
-            name: session_end_time
-            from: models/rsTracksUnionPages
-            select: max(timestamp)
-            window:
-               partition_by:
-                  - context_session_id
-                  - "{{main_id}}"
-            description: Describes the end time of session of a specific context_id
-            
-        - input_var:
-            name: session_row_number
-            from: models/rsTracksUnionPages
-            select: row_number()
-            window:
-                partition_by: 
-                   - context_session_id
-                   - "{{main_id}}"
-                order_by:
-                   - timestamp desc
-            description: A row number for all the events within a single session. This is used to compute some of the session based features
+
         - entity_var:
             name: total_sessions_till_date
-            from: models/rsTracksUnionPages
-            select: count(distinct context_session_id)
-            where: context_session_id is not null
+            from: models/rsSessionTable
+            select: count(*)
             description: Total individual sessions created till date.
         - entity_var:
             name: total_sessions_last_week
-            from: models/rsTracksUnionPages
-            select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            from: models/rsSessionTable
+            select: count(*)
+            where: datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
             description:  total number of sessions over last 7 days.
         - entity_var:
             name: total_sessions_90_days
-            from: models/rsTracksUnionPages
-            select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 90
+            from: models/rsSessionTable
+            select: count(*)
+            where: datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 90
             description:  total number of sessions over last 90 days.
         - entity_var:
             name: total_sessions_365_days
-            from: models/rsTracksUnionPages
-            select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 365
+            from: models/rsSessionTable
+            select: count(*)
+            where: datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 365
             description:  total number of sessions over last 365 days.
         - entity_var:
             name: avg_session_length_in_sec_overall
-            from: models/rsTracksUnionPages
-            select: avg(datediff(second, session_start_time, session_end_time))
-            where: session_row_number = 1 and context_session_id is not null
+            from: models/rsSessionTable
+            select: avg(session_length)
             description: Average session length (in seconds) of all the user sessions till date.
-
         - entity_var:
             name: avg_session_length_in_sec_last_week
-            from: models/rsTracksUnionPages
-            select: avg(datediff(second, session_start_time, session_end_time))
-            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            from: models/rsSessionTable
+            select: avg(session_length)
+            where: datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
             description: Average session length (in seconds) of all the user sessions that started in last 7 days
-
-
         - entity_var:
             name: avg_session_length_in_sec_365_days
-            from: models/rsTracksUnionPages
-            select: avg(datediff(second, session_start_time, session_end_time))
-            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
+            from: models/rsSessionTable
+            select: avg(session_length)
+            where: datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=365
             description: Average session length (in seconds) of all the user sessions that started in last 365 days
-
-
-
         - entity_var:
             name: first_seen_date
-            from: models/rsTracksUnionPages
+            from: models/rsSessionTable
             select: min(date(session_start_time))
             description: The first date on which an event has been recorded by the user
         - entity_var:
             name: last_seen_date
-            from: models/rsTracksUnionPages
+            from: models/rsSessionTable
             select: max(date(session_end_time))
             description: The latest date on which an event has been recorded by the user
+
         - entity_var:
             name: carts_in_past_1_days
             select: count(distinct token)

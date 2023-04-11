@@ -17,6 +17,26 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+
+  - name: rsSessionTable
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with SessionFeature = this.DeRef("models/shopify_session_features")%}
+            select * from {{SessionFeature}}
+        {% endwith %}
+      ids:
+    
+        - select: "user_id"
+          type: user_id
+          entity: user
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
     
   - name: rsTracksUnionPages
     model_type: sql_template
