@@ -293,16 +293,16 @@ models:
         
         - entity_var:
             name: active_days_in_past_7_days
-            select: count(distinct date(timestamp))
-            from: models/rsTracksUnionPages
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+            select: count(distinct date(session_start_time))
+            from: models/rsSessionTable
+            where:  datediff(day,date(session_start_time),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
             description: out of 7 days, how many days have recorded an event till date including today
         - entity_var:
             name: active_days_in_past_365_days
-            select: count(distinct date(timestamp))
-            from: models/rsTracksUnionPages
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
-            description: out of 7 days, how many days have recorded an event till date including todays date
+            select: count(distinct date(session_start_time))
+            from: models/rsSessionTable
+            where:  datediff(day,date(session_start_time),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            description: out of 365 days, how many days have recorded an event till date including todays date
 
         - entity_var:
             name: total_sessions_till_date
