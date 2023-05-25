@@ -2,7 +2,7 @@
 name: shopify_features
 
 # Project's yaml schema version
-schema_version: 27
+schema_version: 33
 
 # WH Connection Profile to use.
 connection: shopify_wh
@@ -12,9 +12,9 @@ connection: shopify_wh
 include_untimed: true
 
 # Model folders to use.
-model_folders: 
+model_folders:
   - models
- 
+
 # Entities in this project and their ids.
 entities:
   - name: user

@@ -17,7 +17,6 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       entity_key: session
-      main_id_type: session_main_id
       edge_sources:
         - from: inputs/rsPages
 
