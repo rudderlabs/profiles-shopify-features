@@ -81,7 +81,7 @@ models:
         #days since last seen
         - entity_var:
             name: days_since_last_seen
-            select: "{% if !(end_time|isnil) %} datediff(day, date(max_timestamp_bw_tracks_pages),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}') {% else %} 1=1 {% endif %}"
+            select: "{% if !(end_time|isnil) %} datediff(day, date(max_timestamp_bw_tracks_pages),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} 1=1 {% endif %}"
 #       #Churn features
         - entity_var:
             name: is_churned_7_days
@@ -312,19 +312,19 @@ models:
             name: total_sessions_last_week
             from: models/rsSessionTable
             select: count(*)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date(''{{end_time.Format(\"2006-01-02 15:04:05\")}}'')) between 0 and 7 {% else %} 1=1 {% endif %}"
+            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 7 {% else %} 1=1 {% endif %}"
             description: total number of sessions over last 7 days.
         - entity_var:
             name: total_sessions_90_days
             from: models/rsSessionTable
             select: count(*)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date(''{{end_time.Format(\"2006-01-02 15:04:05\")}}'')) between 0 and 90 {% else %} 1=1 {% endif %}"
+            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 90 {% else %} 1=1 {% endif %}"
             description: total number of sessions over last 90 days.
         - entity_var:
             name: total_sessions_365_days
             from: models/rsSessionTable
             select: count(*)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date(''{{end_time.Format(\"2006-01-02 15:04:05\")}}'')) between 0 and 365 {% else %} 1=1 {% endif %}"
+            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 365 {% else %} 1=1 {% endif %}"
             description: total number of sessions over last 365 days.
         - entity_var:
             name: avg_session_length_in_sec_overall
@@ -335,7 +335,7 @@ models:
             name: avg_session_length_in_sec_last_week
             from: models/rsSessionTable
             select: avg(session_length)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date(''{{end_time.Format(\"2006-01-02 15:04:05\")}}'')) between 0 and 7 {% else %} 1=1 {% endif %}"
+            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 7 {% else %} 1=1 {% endif %}"
             description: Average session length (in seconds) of all the user sessions that started in last 7 days
         - entity_var:
             name: avg_session_length_in_sec_365_days
