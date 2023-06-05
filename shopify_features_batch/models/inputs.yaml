@@ -1,7 +1,254 @@
+# # This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
+# inputs:
+#   - name: rsIdentifies
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_IDENTIFIES
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#       - select: "upper(email)"
+#         type: email
+#         entity: user
+#   - name: rsTracks
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_TRACKS
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   - name: rsPages
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_PAGES
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   - name: rsOrderCreated
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_ORDER_CREATED
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#       - select: "token"
+#         type: token
+#         entity: user
+#       - select: "cart_token"
+#         type: cart_token
+#         entity: user
+#   - name: rsOrderCancelled
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_ORDER_CANCELLED
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#       - select: "cart_token"
+#         type: cart_token
+#         entity: user
+#       - select: "token"
+#         type: token
+#         entity: user
+    
+
+#   - name: rsCartUpdate
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_CART_UPDATE
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "token"
+#         type: cart_token
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   - name: rsCartCreate
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_CART_CREATE
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "token"
+#         type: cart_token
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   # - name: rsTracksUnionPages
+#   #   view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.TRACKS_UNION_PAGES
+#   #   occurred_at_col: timestamp
+#   #   ids:
+#   #     - select: "user_id"
+#   #       type: user_id
+#   #       entity: user
+#   #     - select: "anonymous_id"
+#   #       type: anonymous_id
+#   #       entity: user
+#   # - name: rsCartCreatesUnionCartUpdate
+#   #   view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.CART_CREATE_UNION_CART_UPDATE
+#   #   occurred_at_col: timestamp
+#   #   ids:
+#   #     - select: "token"
+#   #       type: cart_token
+#   #       entity: user
+#   #     - select: "anonymous_id"
+#   #       type: anonymous_id
+#   #       entity: user
+
+ 
+#   # - name: rsCartLineItems
+#   #   view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.CART_LINE_ITEMS
+#   #   occurred_at_col: timestamp
+#   #   ids:
+#   #     - select: "token"
+#   #       type: cart_token
+#   #       entity: user
+#   #     - select: "anonymous_id"
+#   #       type: anonymous_id
+#   #       entity: user
+
+
+
+# This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
+# inputs:
+#   - name: rsIdentifies
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_IDENTIFIES_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#       - select: "upper(email)"
+#         type: email
+#         entity: user
+#   - name: rsTracks
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_TRACKS_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   - name: rsPages
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_PAGES_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   - name: rsOrderCreated
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_ORDER_CREATED_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#       - select: "token"
+#         type: token
+#         entity: user
+#       - select: "cart_token"
+#         type: cart_token
+#         entity: user
+#   - name: rsOrderCancelled
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_ORDER_CANCELLED_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "user_id"
+#         type: user_id
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#       - select: "cart_token"
+#         type: cart_token
+#         entity: user
+#       - select: "token"
+#         type: token
+#         entity: user
+    
+
+#   - name: rsCartUpdate
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_CART_UPDATE_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "token"
+#         type: cart_token
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   - name: rsCartCreate
+#     table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_CART_CREATE_10mn
+#     occurred_at_col: timestamp
+#     ids:
+#       - select: "token"
+#         type: cart_token
+#         entity: user
+#       - select: "anonymous_id"
+#         type: anonymous_id
+#         entity: user
+#   # - name: rsTracksUnionPages
+#   #   view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.TRACKS_UNION_PAGES
+#   #   occurred_at_col: timestamp
+#   #   ids:
+#   #     - select: "user_id"
+#   #       type: user_id
+#   #       entity: user
+#   #     - select: "anonymous_id"
+#   #       type: anonymous_id
+#   #       entity: user
+#   # - name: rsCartCreatesUnionCartUpdate
+#   #   view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.CART_CREATE_UNION_CART_UPDATE
+#   #   occurred_at_col: timestamp
+#   #   ids:
+#   #     - select: "token"
+#   #       type: cart_token
+#   #       entity: user
+#   #     - select: "anonymous_id"
+#   #       type: anonymous_id
+#   #       entity: user
+
+ 
+#   # - name: rsCartLineItems
+#   #   view: RUDDERSTACK_SOURCE.IDENTITY_STITCHING.CART_LINE_ITEMS
+#   #   occurred_at_col: timestamp
+#   #   ids:
+#   #     - select: "token"
+#   #       type: cart_token
+#   #       entity: user
+#   #     - select: "anonymous_id"
+#   #       type: anonymous_id
+#   #       entity: user
+
+
 # This is a sample file, for detailed reference see: https://rudderlabs.github.io/pywht/
 inputs:
   - name: rsIdentifies
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_IDENTIFIES
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.IDENTIFIES
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -14,7 +261,7 @@ inputs:
         type: email
         entity: user
   - name: rsTracks
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_TRACKS
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TRACKS
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -24,7 +271,7 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsPages
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_PAGES
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.PAGES
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -34,7 +281,7 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsOrderCreated
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_ORDER_CREATED
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.ORDER_CREATED
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -50,7 +297,7 @@ inputs:
         type: cart_token
         entity: user
   - name: rsOrderCancelled
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_ORDER_CANCELLED
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.ORDER_CANCELLED
     occurred_at_col: timestamp
     ids:
       - select: "user_id"
@@ -68,7 +315,7 @@ inputs:
     
 
   - name: rsCartUpdate
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_CART_UPDATE
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.CART_UPDATE
     occurred_at_col: timestamp
     ids:
       - select: "token"
@@ -78,13 +325,13 @@ inputs:
         type: anonymous_id
         entity: user
   - name: rsCartCreate
-    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TEST_CART_CREATE
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.CART_CREATE
     occurred_at_col: timestamp
     ids:
-      - select: "token"
+      - select: TOKEN
         type: cart_token
         entity: user
-      - select: "anonymous_id"
+      - select: ANONYMOUS_ID
         type: anonymous_id
         entity: user
   # - name: rsTracksUnionPages
@@ -119,3 +366,4 @@ inputs:
   #     - select: "anonymous_id"
   #       type: anonymous_id
   #       entity: user
+

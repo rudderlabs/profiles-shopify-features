@@ -5,7 +5,7 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       entity_key: user
-      main_id_type: main_id
+      # main_id_type: main_id
       edge_sources:
         - from: inputs/rsIdentifies
         - from: inputs/rsTracks
@@ -118,6 +118,13 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       entity_key: user
+      macros:
+        - name: macro_datediff
+          inputs: 
+            - column
+          # value: datediff(day, date({{timestamp_col}}), date('{{end_date}}'))
+          value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} datediff(day, date({{column}}), GETDATE()) {% endif %}"
+
       vars:
        
         # total refund
@@ -144,8 +151,8 @@ models:
         #days since last seen
         - entity_var:
             name: days_since_last_seen
-            select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
-
+            # select: datediff(day, date(max_timestamp_bw_tracks_pages),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            select: "{{macro_datediff('max_timestamp_bw_tracks_pages')}}"
    
 
         # has credit card
@@ -240,7 +247,8 @@ models:
        
         - entity_var:
             name: days_since_last_cart_add
-            select: datediff(day, date(max_timestamp_bw_cart_create_update), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            # select: datediff(day, date(max_timestamp_bw_cart_create_update), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            select: "{{macro_datediff('max_timestamp_bw_cart_create_update')}}"
         - entity_var:
             name: max_timestamp_order_created
             select: max(timestamp)
@@ -248,14 +256,17 @@ models:
         
         - entity_var:
             name: days_since_last_purchase
-            select: datediff(day, date(max_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            # select: datediff(day, date(max_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            select: "{{macro_datediff('max_timestamp_order_created')}}"
         - entity_var:
             name: min_timestamp_order_created
             select: min(timestamp)
             from: inputs/rsOrderCreated
         - entity_var:
             name: days_since_first_purchase
-            select: datediff(day, date(min_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            # select: datediff(day, date(min_timestamp_order_created), date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            select: "{{macro_datediff('min_timestamp_order_created')}}"
+             
         - entity_var:
             name: median_transaction_value
             select: median( total_price_usd ::real)
@@ -268,13 +279,14 @@ models:
             name: total_refund_in_past_1_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1 and financial_status in ('paid','refunded','partially_refunded')
+            # where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=1 and financial_status in ('paid','refunded','partially_refunded')
+            where: "{{macro_datediff('timestamp')}} <=1 and financial_status in ('paid','refunded','partially_refunded')"
         - entity_var:
             name: total_refund_in_past_7_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
-   
+            # where: datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))<=7  and financial_status in ('paid','refunded','partially_refunded')
+            where: "{{macro_datediff('timestamp')}} <=7 and financial_status in ('paid','refunded','partially_refunded')"
         - entity_var:
             name: has_mobile_app
             select: max(case when lower(context_device_type) in ('android', 'ios') then 1 else 0 end)
@@ -346,19 +358,35 @@ models:
             where: context_device_manufacturer is not null and context_device_manufacturer!='' 
         - entity_var:
             name: active_days_in_past_7_days
-            select: count(distinct date(timestamp))
+            select: count(distinct date('timestamp'))
             from: models/TracksUnionPages
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+            # where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+            where: "{{macro_datediff('timestamp')}} <=7"
+        # - entity_var:
+        #     name: active_days_in_past_7_days_plus_1
+        #     select: count(distinct date(timestamp)) + 1
+        #     from: models/TracksUnionPages
+        #     where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+ 
+        
         - entity_var:
             name: days_since_account_creation
-            select: datediff(days,date(min(timestamp)),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
-
+            # select: datediff(days,date(min(timestamp)),date('{{timestamp.Format("2006-01-02 15:04:05")}}'))
+            select: "{{macro_datediff('min(timestamp)')}}"
             from: inputs/rsIdentifies
         - entity_var:
             name: active_days_in_past_365_days
             select: count(distinct date(timestamp))
             from: models/TracksUnionPages
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            # where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            where: "{{macro_datediff('timestamp')}} <=365"
+        
+        # - entity_var:
+        #     name: active_days_in_past_365_days_plus_1
+        #     select: count(distinct date(timestamp)) + 1
+        #     from: models/TracksUnionPages
+        #     where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+     
         - input_var:
             name: session_start_time
             from: models/TracksUnionPages
@@ -366,7 +394,7 @@ models:
             window:
                partition_by:
                   - context_session_id
-                  - main_id
+                  - user_main_id
         - input_var:
             name: session_end_time
             from: models/TracksUnionPages
@@ -374,7 +402,7 @@ models:
             window:
                partition_by:
                   - context_session_id
-                  - main_id
+                  - user_main_id
         - input_var:
             name: session_row_number
             from: models/TracksUnionPages
@@ -382,7 +410,7 @@ models:
             window:
                 partition_by: 
                    - context_session_id
-                   - main_id
+                   - user_main_id
                 order_by:
                    - timestamp desc
         - entity_var:
@@ -390,12 +418,24 @@ models:
             from: models/TracksUnionPages
             select: count(distinct context_session_id)
             where: context_session_id is not null
+        # # - entity_var:
+        # #     name: total_sessions_till_date_plus_1
+        # #     from: models/TracksUnionPages
+        # #     select: count(distinct context_session_id) + 1
+        # #     where: context_session_id is not null
 
         - entity_var:
             name: total_sessions_last_week
             from: models/TracksUnionPages
             select: count(distinct context_session_id)
-            where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            # where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            where: " context_session_id is not null and {{macro_datediff('timestamp')}}  between 0 and 7 "
+        # # - entity_var:
+        # #     name: total_sessions_last_week_plus_1
+        # #     from: models/TracksUnionPages
+        # #     select: count(distinct context_session_id)
+        # #     where: context_session_id is not null and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+       
         - entity_var:
             name: avg_session_length_in_sec_overall
             from: models/TracksUnionPages
@@ -413,21 +453,46 @@ models:
             name: carts_in_past_1_days
             select: count(distinct token)
             from: models/CartCreateUnionCartUpdate
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
+            # where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
+            where: "{{macro_datediff('timestamp')}} <=1"
+        # # - entity_var:
+        # #     name: carts_in_past_1_days_plus_1
+        # #     select: count(distinct token) + 1
+        # #     from: models/CartCreateUnionCartUpdate
+        # #     where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1 
+      
         - entity_var:
             name: carts_in_past_7_days
             select: count(distinct token)
             from: models/CartCreateUnionCartUpdate
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+            # where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+            where: "{{macro_datediff('timestamp')}} <=7"
+        # # - entity_var:
+        # #     name: carts_in_past_7_days_plus_1
+        # #     select: count(distinct token) + 1
+        # #     from: models/CartCreateUnionCartUpdate
+        # #     where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7 
+   
         - entity_var:
             name: carts_in_past_365_days
             select: count(distinct token)
             from: models/CartCreateUnionCartUpdate
-            where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            # where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+            where: "{{macro_datediff('timestamp')}} <=365"
+        # # - entity_var:
+        # #     name: carts_in_past_365_days_plus_1
+        # #     select: count(distinct token) + 1
+        # #     from: models/CartCreateUnionCartUpdate
+        # #     where:  datediff(day,date(timestamp),date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365 
+    
         - entity_var:
             name: total_carts
             select: count(distinct token)
             from: models/CartCreateUnionCartUpdate
+        # # - entity_var:
+        # #     name: total_carts_plus_1
+        # #     select: count(distinct token) + 1
+        # #     from: models/CartCreateUnionCartUpdate
 
       
 
@@ -435,27 +500,31 @@ models:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
             from: models/CartLineItems
-            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
+            # where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 1
+            where: "{{macro_datediff('timestamp')}} <=1"
         - entity_var:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
             from: models/CartLineItems
-            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
+            # where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 7
+            where: "{{macro_datediff('timestamp')}} <=7"
         - entity_var:
             name: products_added_in_past_365_days_1
             select: array_agg(distinct product_id)
             from: models/CartLineItems
-            where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
+            # where: datediff(day, date(timestamp), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) <= 365
+            where: "{{macro_datediff('timestamp')}} <=365"
         - entity_var:
             name: avg_session_length_in_sec_last_week
             from: models/TracksUnionPages
             select: avg(datediff(second, session_start_time, session_end_time))
-            where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
- 
+            # where: context_session_id is not null and session_row_number = 1 and datediff(day, date(session_start_time), date('{{timestamp.Format("2006-01-02 15:04:05")}}')) between 0 and 7
+            where: "context_session_id is not null and session_row_number = 1 and {{macro_datediff('timestamp')}}  between 0 and 7"
+
 
 
       features:
-        - total_refund
+        # - total_refund
         - max_timestamp_tracks
         - max_timestamp_pages
         - max_timestamp_bw_tracks_pages
@@ -492,17 +561,25 @@ models:
         - is_active_on_website
         - device_manufacturer
         - active_days_in_past_7_days
+        # - active_days_in_past_7_days_plus_1
         - active_days_in_past_365_days
+        # - active_days_in_past_365_days_plus_1
         - total_sessions_till_date
+        # - total_sessions_till_date_plus_1
         - total_sessions_last_week
+        # - total_sessions_last_week_plus_1
         - avg_session_length_in_sec_overall
         - avg_session_length_in_sec_last_week
         - first_seen_date
         - last_seen_date
         - carts_in_past_1_days
+        # - carts_in_past_1_days_plus_1
         - carts_in_past_7_days
+        # - carts_in_past_7_days_plus_1
         - carts_in_past_365_days
+        # - carts_in_past_365_days_plus_1
         - total_carts
+        # - total_carts_plus_1
         - products_added_in_past_1_days
         - products_added_in_past_7_days
         - products_added_in_past_365_days_1
