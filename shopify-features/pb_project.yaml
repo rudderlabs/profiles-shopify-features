@@ -2,10 +2,10 @@
 name: shopify_features
 
 # Project's yaml schema version
-schema_version: 34
+schema_version: 36
 
 # WH Connection Profile to use.
-connection: shopify_wh
+connection: simulated_data
 
 # Whether to allow inputs having no timestamps,
 # if true, data without timestamps are included when running models
