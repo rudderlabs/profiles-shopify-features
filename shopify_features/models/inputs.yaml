@@ -1,78 +1,72 @@
 inputs:
   - name: rsIdentifies
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES 
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.IDENTIFIES 
     occurred_at_col: timestamp
     ids:
-      - select: "user_id"
+      - select: user_id
         type: user_id
         entity: user
-      - select: "anonymous_id"
+      - select: anonymous_id
         type: anonymous_id
         entity: user
-      - select: "lower(email)"
+      - select: lower(email)
         type: email
         entity: user
   - name: rsTracks
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.TRACKS
     occurred_at_col: timestamp
     ids:
-      - select: "user_id"
+      - select: user_id
         type: user_id
         entity: user
-      - select: "anonymous_id"
+      - select: anonymous_id
         type: anonymous_id
         entity: user
   - name: rsPages
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.PAGES
     occurred_at_col: timestamp
     ids:
-      - select: "user_id"
+      - select: user_id
         type: user_id
         entity: user
-      - select: "anonymous_id"
+      - select: anonymous_id
         type: anonymous_id
         entity: user
   - name: rsOrderCreated
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CREATED
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.ORDER_CREATED
     occurred_at_col: timestamp
     ids:
-      - select: "user_id"
+      - select: user_id
         type: user_id
         entity: user
-      - select: "anonymous_id"
+      - select: anonymous_id
         type: anonymous_id
         entity: user
       
   - name: rsOrderCancelled
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CANCELLED
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.ORDER_CANCELLED
     occurred_at_col: timestamp
     ids:
-      - select: "user_id"
+      - select: user_id
         type: user_id
         entity: user
-      - select: "anonymous_id"
+      - select: anonymous_id
         type: anonymous_id
         entity: user
   
   - name: rsCartUpdate
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_UPDATE
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.CART_UPDATE
     occurred_at_col: timestamp
     ids:
    
-      - select: "anonymous_id"
+      - select: anonymous_id
         type: anonymous_id
         entity: user
   - name: rsCartCreate
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_CREATE
+    table: RUDDERSTACK_TEST_DB.RS360_SIMULATED_DATA_10MN.CART_CREATE
     occurred_at_col: timestamp
     ids:
-  
-      - select: "anonymous_id"
+    
+      - select: anonymous_id
         type: anonymous_id
         entity: user
-
-
-
- 
-  
-    
