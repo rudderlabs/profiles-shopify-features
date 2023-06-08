@@ -63,6 +63,12 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       entity_key: user
+      macros:
+        - name: macro_datediff
+          inputs: 
+            - column
+          value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} datediff(day, date({{column}}), GETDATE()) {% endif %}"
+
       vars:
         - entity_var:
             name: max_timestamp_tracks
@@ -81,8 +87,8 @@ models:
         #days since last seen
         - entity_var:
             name: days_since_last_seen
-            select: "{% if !(end_time|isnil) %} datediff(day, date(max_timestamp_bw_tracks_pages),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} 1=1 {% endif %}"
-#       #Churn features
+            select: "{{macro_datediff('max_timestamp_bw_tracks_pages')}}"    
+ #Churn features
         - entity_var:
             name: is_churned_7_days
             select: case when days_since_last_seen > 7 then 1 else 0 end
@@ -104,7 +110,7 @@ models:
        
         - entity_var:
             name: days_since_last_cart_add
-            select: "{% if !(end_time|isnil) %} datediff(day, date(max_timestamp_bw_cart_create_update), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} 1=1 {% endif %}"
+            select: "{{macro_datediff('max_timestamp_bw_cart_create_update')}}"    
             description: Number of days since the user has added a product to cart
         #total refund
         - entity_var:
@@ -129,7 +135,7 @@ models:
         
         - entity_var:
             name: days_since_last_purchase
-            select: "{% if !(end_time|isnil) %} datediff(day, date(max_timestamp_order_created), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')){% else %} 1=1 {% endif %}"
+            select: "{{macro_datediff('max_timestamp_order_created')}}"
             description: Number of days since the user purchased the latest product
     #days since first purchase
 
@@ -140,7 +146,7 @@ models:
 
         - entity_var:
             name: days_since_first_purchase
-            select: "{% if !(end_time|isnil) %} datediff(day, date(min_timestamp_order_created), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')){% else %} 1=1 {% endif %}"
+            select: "{{macro_datediff('min_timestamp_order_created')}}"
             description: Number of days since the user purchased the first product
     #has credit card
         - entity_var:
@@ -188,21 +194,20 @@ models:
             name: total_refund_in_past_1_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=1 {% else %} 1=1 {% endif %} and financial_status in ('paid','refunded','partially_refunded')"
+            where: "{{macro_datediff('timestamp')}}"
             description: Total refund for a particular user in last 1 day
     #total_refund_in_past_7_days
         - entity_var:
             name: total_refund_in_past_7_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=7 {% else %} 1=1 {% endif %} and financial_status in ('paid','refunded','partially_refunded')"
+            where: "{{macro_datediff('timestamp')}}"
             description: Total refund for a particular user in last 1 day
        
         
         - entity_var:
             name: days_since_account_creation
-            select: "{% if !(end_time|isnil) %}datediff(days,date(min(timestamp)),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')){% else %} 1=1 {% endif %}"
-
+            select: "{{macro_datediff('min(timestamp)')}}"
             from: inputs/rsIdentifies
 
         - entity_var:
@@ -294,13 +299,13 @@ models:
             name: active_days_in_past_7_days
             select: count(distinct date(session_start_time))
             from: models/rsSessionTable
-            where: "{% if !(end_time|isnil) %}datediff(day,date(session_start_time),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <= 7{% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
             description: out of 7 days, how many days have recorded an event till date including today
         - entity_var:
             name: active_days_in_past_365_days
             select: count(distinct date(session_start_time))
             from: models/rsSessionTable
-            where: "{% if !(end_time|isnil) %}datediff(day,date(session_start_time),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <= 365{% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
             description: out of 365 days, how many days have recorded an event till date including todays date
 
         - entity_var:
@@ -312,19 +317,20 @@ models:
             name: total_sessions_last_week
             from: models/rsSessionTable
             select: count(*)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 7 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
             description: total number of sessions over last 7 days.
         - entity_var:
             name: total_sessions_90_days
             from: models/rsSessionTable
             select: count(*)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 90 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
             description: total number of sessions over last 90 days.
         - entity_var:
             name: total_sessions_365_days
             from: models/rsSessionTable
             select: count(*)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 365 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
+
             description: total number of sessions over last 365 days.
         - entity_var:
             name: avg_session_length_in_sec_overall
@@ -335,13 +341,15 @@ models:
             name: avg_session_length_in_sec_last_week
             from: models/rsSessionTable
             select: avg(session_length)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) between 0 and 7 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
+
             description: Average session length (in seconds) of all the user sessions that started in last 7 days
         - entity_var:
             name: avg_session_length_in_sec_365_days
             from: models/rsSessionTable
             select: avg(session_length)
-            where: "{% if !(end_time|isnil) %} datediff(day, date(session_start_time), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=365 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('session_start_time')}}"
+
             description: Average session length (in seconds) of all the user sessions that started in last 365 days
         - entity_var:
             name: first_seen_date
@@ -358,20 +366,23 @@ models:
             name: carts_in_past_1_days
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))  <= 1 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days
         - entity_var:
             name: carts_in_past_7_days
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))  <= 7 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days
             
         - entity_var:
             name: carts_in_past_365_days
             select: count(distinct token)
             from: models/rsCartCreateUnionCartUpdate
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))  <= 365 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days
 
         - entity_var:
@@ -401,20 +412,23 @@ models:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            where: "{% if !(end_time|isnil) %} datediff(day, date(timestamp), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <= 1 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: List of products added to cart by the user in last 1 days. (array with list of all product ids). It includes all purchased products plus current active cart.
         - entity_var:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            where: "{% if !(end_time|isnil) %} datediff(day, date(timestamp), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <= 7 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: List of products added to cart by the user in last 7 days. (array with list of all product ids). It includes all purchased products plus current active cart.
 
         - entity_var:
             name: products_added_in_past_365_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            where: "{% if !(end_time|isnil) %} datediff(day, date(timestamp), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <= 365 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: List of products added to cart by the user in last 365 days. (array with list of all product ids). It includes all purchased products plus current active cart.
         - entity_var:
             name: latest_cart_id
@@ -439,40 +453,42 @@ models:
             name: transactions_in_past_1_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=1 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+
             description: Number of transactions in last 1 day
         - entity_var:
             name: transactions_in_past_90_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=90 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"            
             description: Number of transactions in last 90 day
 
         - entity_var:
             name: transactions_in_past_365_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=365 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
             description: Number of transactions in last 365 day
 
         - entity_var:
             name: net_amt_spent_in_past_90_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=90 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
             description: Net amount i.e. sales-refund spent by the user in last 90 days.
         - entity_var:
             name: net_amt_spent_in_past_365_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=365 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
             description: Net amount i.e. sales-refund spent by the user in last 365 days.
 
         - entity_var:
             name: net_amt_spent_in_past_1_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
-            where: "{% if !(end_time|isnil) %} datediff(day,date(timestamp),date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'))<=1 {% else %} 1=1 {% endif %}"
+            where: "{{macro_datediff('timestamp')}}"
+            
             description: Net amount i.e. sales-refund spent by the user in last 1 day.
 
         - entity_var:
