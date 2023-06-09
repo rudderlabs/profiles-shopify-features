@@ -40,6 +40,9 @@ models:
         - entity_var: 
             name: session_length
             select: TIMESTAMPDIFF(SECOND, session_start_time, session_end_time) 
+            dependencies:
+                - session_start_time
+                - session_end_time
         - entity_var: 
             name: user_id
             select: max(user_id)
@@ -84,15 +87,22 @@ models:
         - entity_var:
             name: max_timestamp_bw_tracks_pages
             select: CASE WHEN max_timestamp_tracks>=max_timestamp_pages THEN max_timestamp_tracks ELSE max_timestamp_pages END
+            dependencies:
+                - max_timestamp_tracks
+                - max_timestamp_pages
         #days since last seen
         - entity_var:
             name: days_since_last_seen
             select: "{{macro_datediff('max_timestamp_bw_tracks_pages')}}"    
+            dependencies:
+                - max_timestamp_bw_tracks_pages
  #Churn features
         - entity_var:
             name: is_churned_7_days
             select: case when days_since_last_seen > 7 then 1 else 0 end
             description: it specifies if there is any activity observed in the last n days. It is dependent on days_since_last_seen
+            dependencies:
+                - days_since_last_seen
         #days since last cart add
         - entity_var:
             name: max_timestamp_cart_update
@@ -107,11 +117,16 @@ models:
         - entity_var:
             name: max_timestamp_bw_cart_create_update
             select: CASE WHEN max_timestamp_cart_update>=max_timestamp_cart_create THEN max_timestamp_cart_update ELSE max_timestamp_cart_create end
+            dependencies:
+                - max_timestamp_cart_create
+                - max_timestamp_cart_update
        
         - entity_var:
             name: days_since_last_cart_add
             select: "{{macro_datediff('max_timestamp_bw_cart_create_update')}}"    
             description: Number of days since the user has added a product to cart
+            dependencies:
+                - max_timestamp_bw_cart_create_update
         #total refund
         - entity_var:
             name: total_refund
@@ -137,6 +152,8 @@ models:
             name: days_since_last_purchase
             select: "{{macro_datediff('max_timestamp_order_created')}}"
             description: Number of days since the user purchased the latest product
+            dependencies:
+                - max_timestamp_order_created
     #days since first purchase
 
         - entity_var:
@@ -148,6 +165,8 @@ models:
             name: days_since_first_purchase
             select: "{{macro_datediff('min_timestamp_order_created')}}"
             description: Number of days since the user purchased the first product
+            dependencies:
+                - min_timestamp_order_created
     #has credit card
         - entity_var:
             name: has_credit_card
@@ -444,6 +463,8 @@ models:
             from: models/rsCartLineItems
             where: token=latest_cart_id
             description: The value of products added in the latest cart.
+            dependencies:
+                - latest_cart_id
         - entity_var:
             name: last_cart_status
             select: min(coalesce(fulfillment_status, financial_status, 'abandoned'))
