@@ -1,4 +1,4 @@
-models:  
+models:
   - name: rsCartCreateUnionCartUpdate
     model_type: sql_template
     model_spec:
@@ -9,11 +9,10 @@ models:
       single_sql: |
         {% with CartCreate = this.DeRef("inputs/rsCartCreate") CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
             select anonymous_id,timestamp,token from {{CartCreate}}
-            union all 
+            union all
             select anonymous_id,timestamp,token from {{CartUpdate}}
         {% endwith %}
       ids:
-    
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
@@ -30,14 +29,13 @@ models:
             select * from {{SessionFeature}}
         {% endwith %}
       ids:
-    
         - select: "user_id"
           type: user_id
           entity: user
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-    
+
   - name: rsItemsPurchasedEverSku
     model_type: sql_template
     model_spec:
@@ -50,6 +48,7 @@ models:
           select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
             from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
         {% endwith %}
+
   - name: rsItemsPurchasedEverCte
     model_type: sql_template
     model_spec:
@@ -62,6 +61,7 @@ models:
          SELECT * , row_number() OVER (PARTITION BY token ORDER BY timestamp DESC) AS rn
             FROM   {{sku}}
           {% endwith %}
+
   - name: rsItemsPurchasedEver
     model_type: sql_template
     model_spec:
@@ -71,20 +71,19 @@ models:
         run_type: discrete
       single_sql: |
         {% with cte = this.DeRef("models/rsItemsPurchasedEverCte") %}
-    
+
             SELECT *
             FROM   {{cte}}
             WHERE  rn = 1
             {% endwith %}
       ids:
-    
        - select: "user_id"
          type: user_id
          entity: user
        - select: "anonymous_id"
          type: anonymous_id
          entity: user
-     
+
   - name: rsOrderCreatedOrderCancelled
     model_type: sql_template
     model_spec:
@@ -94,7 +93,7 @@ models:
         run_type: discrete
       single_sql: |
         {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") OrderCancelled = this.DeRef("inputs/rsOrderCancelled") %}
-            select 
+            select
             a.ANONYMOUS_ID,
             a.user_id,
             a.total_price_usd,
@@ -112,13 +111,12 @@ models:
             b.financial_status as financial_status_order_cancelled,
             b.cart_token as cart_token_order_cancelled,
             b.timestamp as timestamp_order_cancelled,
-            b.products as products_order_cancelled 
-            from {{OrderCreated}} a left join {{OrderCancelled}} b 
+            b.products as products_order_cancelled
+            from {{OrderCreated}} a left join {{OrderCancelled}} b
             on a.user_id = b.user_id and a.order_number = b.order_number
-         
-               {% endwith %}
+        {% endwith %}
+
       ids:
-    
         - select: "user_id"
           type: user_id
           entity: user
@@ -128,6 +126,7 @@ models:
         - select: "cart_token"
           type: cart_token
           entity: user
+
   - name: rsCartLineItems
     model_type: sql_template
     model_spec:
@@ -137,7 +136,6 @@ models:
         run_type: discrete
       single_sql: |
         {% with CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
-        
         SELECT to_char(t.value['brand']) AS brand,
             t.value['discounted_price']::real AS discounted_price,
             to_char(t.value['gift_card']) AS gift_card,
@@ -171,7 +169,7 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-       
+
   - name: rsLastCartStatus
     model_type: sql_template
     model_spec:
@@ -217,7 +215,6 @@ models:
           left outer join {{OrderCreated}} oc on cli.token = oc.cart_token
         {% endwith %}
       ids:
-    
        - select: "user_id"
          type: user_id
          entity: user
