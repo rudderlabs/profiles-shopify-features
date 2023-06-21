@@ -41,6 +41,9 @@ models:
         - entity_var:
             name: session_length
             select: TIMESTAMPDIFF(SECOND, session_start_time, session_end_time)
+            dependencies:
+                - session_start_time
+                - session_end_time
 
         - entity_var:
             name: user_id
@@ -85,17 +88,24 @@ models:
         - entity_var:
             name: max_timestamp_bw_tracks_pages
             select: CASE WHEN max_timestamp_tracks>=max_timestamp_pages THEN max_timestamp_tracks ELSE max_timestamp_pages END
+            dependencies:
+                - max_timestamp_tracks
+                - max_timestamp_pages
 
         #days since last seen
         - entity_var:
             name: days_since_last_seen
             select: "{{macro_datediff('max_timestamp_bw_tracks_pages')}}"
+            dependencies:
+                - max_timestamp_bw_tracks_pages
 
         #Churn features
         - entity_var:
             name: is_churned_7_days
             select: case when days_since_last_seen > 7 then 1 else 0 end
             description: it specifies if there is any activity observed in the last n days. It is dependent on days_since_last_seen
+            dependencies:
+                - days_since_last_seen
 
         #days since last cart add
         - entity_var:
@@ -111,11 +121,16 @@ models:
         - entity_var:
             name: max_timestamp_bw_cart_create_update
             select: CASE WHEN max_timestamp_cart_update>=max_timestamp_cart_create THEN max_timestamp_cart_update ELSE max_timestamp_cart_create end
+            dependencies:
+                - max_timestamp_cart_create
+                - max_timestamp_cart_update
 
         - entity_var:
             name: days_since_last_cart_add
             select: "{{macro_datediff('max_timestamp_bw_cart_create_update')}}"
             description: Number of days since the user has added a product to cart
+            dependencies:
+                - max_timestamp_bw_cart_create_update
 
         #total refund
         - entity_var:
@@ -143,6 +158,8 @@ models:
             name: days_since_last_purchase
             select: "{{macro_datediff('max_timestamp_order_created')}}"
             description: Number of days since the user purchased the latest product
+            dependencies:
+                - max_timestamp_order_created
 
         #days since first purchase
         - entity_var:
@@ -154,6 +171,8 @@ models:
             name: days_since_first_purchase
             select: "{{macro_datediff('min_timestamp_order_created')}}"
             description: Number of days since the user purchased the first product
+            dependencies:
+                - min_timestamp_order_created
 
         #has credit card
         - entity_var:
@@ -311,6 +330,8 @@ models:
             from: models/rsSessionTable
             where: "{{macro_datediff('session_start_time')}}"
             description: out of 7 days, how many days have recorded an event till date including today
+            dependencies:
+                - session_start_time
 
         - entity_var:
             name: active_days_in_past_365_days
@@ -318,6 +339,8 @@ models:
             from: models/rsSessionTable
             where: "{{macro_datediff('session_start_time')}}"
             description: out of 365 days, how many days have recorded an event till date including todays date
+            dependencies:
+                - session_start_time
 
         - entity_var:
             name: total_sessions_till_date
@@ -331,6 +354,8 @@ models:
             select: count(*)
             where: "{{macro_datediff('session_start_time')}}"
             description: total number of sessions over last 7 days.
+            dependencies:
+                - session_start_time
 
         - entity_var:
             name: total_sessions_90_days
@@ -338,6 +363,8 @@ models:
             select: count(*)
             where: "{{macro_datediff('session_start_time')}}"
             description: total number of sessions over last 90 days.
+            dependencies:
+                - session_start_time
 
         - entity_var:
             name: total_sessions_365_days
@@ -345,12 +372,16 @@ models:
             select: count(*)
             where: "{{macro_datediff('session_start_time')}}"
             description: total number of sessions over last 365 days.
+            dependencies:
+                - session_start_time
 
         - entity_var:
             name: avg_session_length_in_sec_overall
             from: models/rsSessionTable
             select: avg(session_length)
             description: Average session length (in seconds) of all the user sessions till date.
+            dependencies:
+                - session_length
 
         - entity_var:
             name: avg_session_length_in_sec_last_week
@@ -358,6 +389,9 @@ models:
             select: avg(session_length)
             where: "{{macro_datediff('session_start_time')}}"
             description: Average session length (in seconds) of all the user sessions that started in last 7 days
+            dependencies:
+                - session_start_time
+                - session_length
 
         - entity_var:
             name: avg_session_length_in_sec_365_days
@@ -365,18 +399,25 @@ models:
             select: avg(session_length)
             where: "{{macro_datediff('session_start_time')}}"
             description: Average session length (in seconds) of all the user sessions that started in last 365 days
+            dependencies:
+                - session_start_time
+                - session_length
 
         - entity_var:
             name: first_seen_date
             from: models/rsSessionTable
             select: min(date(session_start_time))
             description: The first date on which an event has been recorded by the user
+            dependencies:
+                - session_start_time
 
         - entity_var:
             name: last_seen_date
             from: models/rsSessionTable
             select: max(date(session_end_time))
             description: The latest date on which an event has been recorded by the user
+            dependencies:
+                - session_end_time
 
         - entity_var:
             name: carts_in_past_1_days
@@ -456,6 +497,8 @@ models:
             from: models/rsCartLineItems
             where: token=latest_cart_id
             description: The value of products added in the latest cart.
+            dependencies:
+                - latest_cart_id
 
         - entity_var:
             name: last_cart_status
