@@ -147,4 +147,54 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-
+  - name: rsLastCartStatus
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with rsCartLineItems = this.DeRef("models/rsCartLineItems") OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
+          select cli.BRAND,
+          cli.DISCOUNTED_PRICE,
+          cli.GIFT_CARD,
+          cli.GRAMS,
+          cli.ID,
+          cli.KEY,
+          cli.LINE_PRICE,
+          cli.ORIGINAL_LINE_PRICE,
+          cli.ORIGINAL_PRICE,
+          cli.PRICE,
+          cli.PRODUCT_ID,
+          cli.PROPERTIES,
+          cli.QUANTITY,
+          cli.SKU,
+          cli.TAXABLE,
+          cli.TITLE,
+          cli.TOTAL_DISCOUNT,
+          cli._VARIANT_,
+          cli.PRODUCTS,
+          cli.ANONYMOUS_ID,
+          cli.TIMESTAMP,
+          cli.TOKEN,
+          oc.ANONYMOUS_ID as Order_Created_Anonymous_ID,
+          oc.USER_ID,
+          oc.TOTAL_PRICE_USD,
+          oc.PRODUCTS as order_created_products,
+          oc.PAYMENT_DETAILS_CREDIT_CARD_COMPANY,
+          oc.ORDER_NUMBER,
+          oc.TIMESTAMP as order_created_timestamp,
+          oc.CART_TOKEN,
+          oc.FULFILLMENT_STATUS,
+          oc.FINANCIAL_STATUS
+          from {{rsCartLineItems}} cli
+          left outer join {{OrderCreated}} oc on cli.token = oc.cart_token
+        {% endwith %}
+      ids:
+        - select: "user_id"
+          type: user_id
+          entity: user
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
