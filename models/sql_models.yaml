@@ -1,22 +1,4 @@
 models:
-  - name: rsCartCreateUnionCartUpdate
-    model_type: sql_template
-    model_spec:
-      validity_time: 24h # 1 day
-      materialization:
-        output_type: ephemeral
-        run_type: discrete
-      single_sql: |
-        {% with CartCreate = this.DeRef("inputs/rsCartCreate") CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
-            select anonymous_id,timestamp,token from {{CartCreate}}
-            union all
-            select anonymous_id,timestamp,token from {{CartUpdate}}
-        {% endwith %}
-      ids:
-        - select: "anonymous_id"
-          type: anonymous_id
-          entity: user
-
   - name: rsSessionTable
     model_type: sql_template
     model_spec:
@@ -35,7 +17,6 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-
   - name: rsItemsPurchasedEverSku
     model_type: sql_template
     model_spec:
@@ -48,7 +29,6 @@ models:
           select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
             from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
         {% endwith %}
-
   - name: rsItemsPurchasedEverCte
     model_type: sql_template
     model_spec:
@@ -61,7 +41,6 @@ models:
          SELECT * , row_number() OVER (PARTITION BY token ORDER BY timestamp DESC) AS rn
             FROM   {{sku}}
           {% endwith %}
-
   - name: rsItemsPurchasedEver
     model_type: sql_template
     model_spec:
@@ -77,13 +56,12 @@ models:
             WHERE  rn = 1
             {% endwith %}
       ids:
-       - select: "user_id"
-         type: user_id
-         entity: user
-       - select: "anonymous_id"
-         type: anonymous_id
-         entity: user
-
+        - select: "user_id"
+          type: user_id
+          entity: user
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
   - name: rsOrderCreatedOrderCancelled
     model_type: sql_template
     model_spec:
@@ -115,7 +93,6 @@ models:
             from {{OrderCreated}} a left join {{OrderCancelled}} b
             on a.user_id = b.user_id and a.order_number = b.order_number
         {% endwith %}
-
       ids:
         - select: "user_id"
           type: user_id
@@ -126,7 +103,6 @@ models:
         - select: "cart_token"
           type: cart_token
           entity: user
-
   - name: rsCartLineItems
     model_type: sql_template
     model_spec:
@@ -169,7 +145,6 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-
   - name: rsLastCartStatus
     model_type: sql_template
     model_spec:
@@ -215,9 +190,9 @@ models:
           left outer join {{OrderCreated}} oc on cli.token = oc.cart_token
         {% endwith %}
       ids:
-       - select: "user_id"
-         type: user_id
-         entity: user
-       - select: "anonymous_id"
-         type: anonymous_id
-         entity: user
+        - select: "user_id"
+          type: user_id
+          entity: user
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
