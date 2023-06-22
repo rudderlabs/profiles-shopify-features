@@ -69,30 +69,32 @@ models:
       materialization:
         output_type: ephemeral
         run_type: discrete
-      single_sql: |
-        {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") OrderCancelled = this.DeRef("inputs/rsOrderCancelled") %}
-            select
-            a.ANONYMOUS_ID,
-            a.user_id,
-            a.total_price_usd,
-            a.products,
-            a.payment_details_credit_card_company,
-            a.order_number,
-            a.timestamp,
-            a.cart_token,
-            a.fulfillment_status,
-            a.financial_status,
-            b.anonymous_id as anonymous_id_order_cancelled,
-            b.user_id as user_id_order_cancelled ,
-            b.total_price_usd as total_price_usd_order_cancelled,
-            b.order_number as order_number_order_cancelled,
-            b.financial_status as financial_status_order_cancelled,
-            b.cart_token as cart_token_order_cancelled,
-            b.timestamp as timestamp_order_cancelled,
-            b.products as products_order_cancelled
-            from {{OrderCreated}} a left join {{OrderCancelled}} b
-            on a.user_id = b.user_id and a.order_number = b.order_number
-        {% endwith %}
+      single_sql: "{% with OrderCreated = this.DeRef(\"inputs/rsOrderCreated\") OrderCancelled = this.DeRef(\"inputs/rsOrderCancelled\") OrderUpdated = this.DeRef(\"inputs/rsOrderUpdated\")%}
+         select
+             a.ANONYMOUS_ID,
+             a.user_id,
+             a.total_price_usd,
+             a.products,
+             a.payment_details_credit_card_company,
+             a.order_number,
+             a.timestamp,
+             a.cart_token,
+             a.financial_status,
+             b.anonymous_id as anonymous_id_order_cancelled,
+             b.user_id as user_id_order_cancelled ,
+             b.total_price_usd as total_price_usd_order_cancelled,
+             b.order_number as order_number_order_cancelled,
+             b.financial_status as financial_status_order_cancelled,
+             b.cart_token as cart_token_order_cancelled,
+             b.timestamp as timestamp_order_cancelled,
+             b.products as products_order_cancelled,
+             c.fulfillment_status
+         from {{OrderCreated}} a 
+         left join {{OrderCancelled}} b on a.user_id = b.user_id and a.order_number = b.order_number
+         left join {{OrderUpdated}} c on a.user_id = c.user_id and a.order_number = c.order_number
+          
+                {% endwith %}
+         "
       ids:
         - select: "user_id"
           type: user_id
@@ -145,54 +147,4 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-  - name: rsLastCartStatus
-    model_type: sql_template
-    model_spec:
-      validity_time: 24h # 1 day
-      materialization:
-        output_type: ephemeral
-        run_type: discrete
-      single_sql: |
-        {% with rsCartLineItems = this.DeRef("models/rsCartLineItems") OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
-          select cli.BRAND,
-          cli.DISCOUNTED_PRICE,
-          cli.GIFT_CARD,
-          cli.GRAMS,
-          cli.ID,
-          cli.KEY,
-          cli.LINE_PRICE,
-          cli.ORIGINAL_LINE_PRICE,
-          cli.ORIGINAL_PRICE,
-          cli.PRICE,
-          cli.PRODUCT_ID,
-          cli.PROPERTIES,
-          cli.QUANTITY,
-          cli.SKU,
-          cli.TAXABLE,
-          cli.TITLE,
-          cli.TOTAL_DISCOUNT,
-          cli._VARIANT_,
-          cli.PRODUCTS,
-          cli.ANONYMOUS_ID,
-          cli.TIMESTAMP,
-          cli.TOKEN,
-          oc.ANONYMOUS_ID as Order_Created_Anonymous_ID,
-          oc.USER_ID,
-          oc.TOTAL_PRICE_USD,
-          oc.PRODUCTS as order_created_products,
-          oc.PAYMENT_DETAILS_CREDIT_CARD_COMPANY,
-          oc.ORDER_NUMBER,
-          oc.TIMESTAMP as order_created_timestamp,
-          oc.CART_TOKEN,
-          oc.FULFILLMENT_STATUS,
-          oc.FINANCIAL_STATUS
-          from {{rsCartLineItems}} cli
-          left outer join {{OrderCreated}} oc on cli.token = oc.cart_token
-        {% endwith %}
-      ids:
-        - select: "user_id"
-          type: user_id
-          entity: user
-        - select: "anonymous_id"
-          type: anonymous_id
-          entity: user
+
