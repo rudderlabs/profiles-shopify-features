@@ -17,7 +17,6 @@ This is Profiles library project to create user features from Shopify event stre
 ## SQL Models
 | name |
 | ---- |
-| rsCartCreateUnionCartUpdate |
 | rsSessionTable |
 | rsItemsPurchasedEverSku |
 | rsItemsPurchasedEverCte |
@@ -58,9 +57,9 @@ This is Profiles library project to create user features from Shopify event stre
 | avg_transaction_value | rsOrderCreated | Total price in each transaction/Total number of transactions. |
 | avg_units_per_transaction | rsOrderCreated | It shows the average units purchased in each transaction. (Total units in each transaction/Total transactions). Includes only those transactions where the total price (from column current_total_price) is greater than zero. So, the feature exclude transactions with 100% off, replacement products etc that may result in the total_price being equal to zero. |
 | campaign_sources | rsIdentifies |  |
-| carts_in_past_1_days | rsCartCreateUnionCartUpdate | A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days |
-| carts_in_past_365_days | rsCartCreateUnionCartUpdate | A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days |
-| carts_in_past_7_days | rsCartCreateUnionCartUpdate | A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days |
+| carts_in_past_1_days | rsCartUpdate | A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days |
+| carts_in_past_365_days | rsCartUpdate | A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days |
+| carts_in_past_7_days | rsCartUpdate | A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days |
 | country | rsIdentifies |  |
 | currency | rsIdentifies |  |
 | days_since_account_creation | rsIdentifies |  |
@@ -95,7 +94,7 @@ This is Profiles library project to create user features from Shopify event stre
 | products_added_in_past_7_days | rsCartLineItems | List of products added to cart by the user in last 7 days. (array with list of all product ids). It includes all purchased products plus current active cart. |
 | refund_count | rsOrderCancelled | The total number of times an order has been cancelled by a user and has been refunded |
 | state | rsIdentifies |  |
-| total_carts | rsCartCreateUnionCartUpdate | Total carts created by the user till date. |
+| total_carts | rsCartUpdate | Total carts created by the user till date. |
 | total_products_added | rsCartLineItems | Total products added to cart till date. (array with list of all product ids). It includes all purchased products plus current active cart. |
 | total_refund | rsOrderCancelled | Total refund for a particular user to date. |
 | total_refund_in_past_1_days | rsOrderCancelled | Total refund for a particular user in last 1 day |
