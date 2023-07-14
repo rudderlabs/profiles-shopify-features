@@ -34,6 +34,16 @@ models:
           value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} datediff(day, date({{column}}), GETDATE()) {% endif %}"
       vars:
         - entity_var:
+            name: max_timestamp_cart_update
+            select: max(timestamp)
+            from: inputs/rsCartUpdate
+        - entity_var:
+            name: days_since_last_cart_add
+            select: "{{macro_datediff('max_timestamp_cart_update')}}"
+            description: Number of days since the user has added a product to cart
+            dependencies:
+                - max_timestamp_cart_update
+        - entity_var:
             name: max_timestamp_tracks
             select: max(timestamp)
             from: inputs/rsTracks
@@ -297,18 +307,12 @@ models:
         - entity_var:
             name: first_seen_date
             from: models/rsSessionTable
-            select: first_value(date(session_start_time))
-            window:
-              order_by:
-              - date(session_start_time) 
+            select: min(date(session_start_time))
             description: The first date on which an event has been recorded by the user
         - entity_var:
             name: last_seen_date
             from: models/rsSessionTable
-            select: last_value(date(session_end_time))
-            window:
-                order_by:
-                - date(session_end_time)
+            select: max(date(session_end_time))
             description: The latest date on which an event has been recorded by the user
             #days since last cart add
         - entity_var:
