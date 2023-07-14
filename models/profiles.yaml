@@ -19,6 +19,7 @@ models:
       entity_key: session
       edge_sources:
         - from: inputs/rsPages
+        - from: inputs/rsIdentifies
 
   # Remove the section below, if you don't want to generate a feature table
   
@@ -37,17 +38,11 @@ models:
             name: max_timestamp_tracks
             select: max(timestamp)
             from: inputs/rsTracks
-            window:
-              order_by:
-              - timestamp desc
 
         - entity_var:
             name: max_timestamp_pages
             select: max(timestamp)
             from: inputs/rsPages
-            window:
-              order_by:
-              - timestamp desc
             description: The total value of products that are part of the last transaction.
 
 
@@ -78,9 +73,7 @@ models:
             name: max_timestamp_order_created
             select: max(timestamp)
             from: inputs/rsOrderCreated
-            window:
-              order_by:
-              - timestamp desc
+
 
         - entity_var:
             name: days_since_last_purchase
@@ -93,9 +86,6 @@ models:
         - entity_var:
             name: min_timestamp_order_created
             select: min(timestamp)
-            window:
-              order_by:
-              - timestamp desc
             from: inputs/rsOrderCreated
 
         - entity_var:
@@ -110,9 +100,6 @@ models:
             name: has_credit_card
             select: max(case when lower(payment_details_credit_card_company) in ('visa','american express','mastercard') then 1 else 0 end)
             from: inputs/rsOrderCreated
-            window:
-              order_by:
-              - timestamp desc
             description: If the user has a credit card.
 
         #avg_units_per_transaction
@@ -134,9 +121,6 @@ models:
             name: highest_transaction_value
             select: max(total_price_usd ::real)
             from: inputs/rsOrderCreated
-            window:
-              order_by:
-              - timestamp desc
             description: Of all the transactions done by the user, this features contains the highest transaction value.
 
         #median_transaction_value
@@ -314,7 +298,7 @@ models:
         - entity_var:
             name: first_seen_date
             from: models/rsSessionTable
-            select: min(date(session_start_time))
+            select: first_value(date(session_start_time))
             window:
               order_by:
               - date(session_start_time) 
@@ -322,7 +306,7 @@ models:
         - entity_var:
             name: last_seen_date
             from: models/rsSessionTable
-            select: max(date(session_end_time))
+            select: last_value(date(session_end_time))
             window:
                 order_by:
                 - date(session_end_time)
@@ -331,17 +315,11 @@ models:
         - entity_var:
             name: max_timestamp_cart_update
             select: max(timestamp)
-            window:
-              order_by:
-              - timestamp desc
             from: inputs/rsCartUpdate
 
         - entity_var:
             name: max_timestamp_cart_create
             select: max(timestamp)
-            window:
-              order_by:
-              - timestamp desc
             from: inputs/rsCartUpdate
 
         - entity_var:
@@ -581,7 +559,7 @@ models:
             window:
               order_by:
               - timestamp
-            from: inputs/rsPages
+            from: inputs/rsIdentifies
             
         - entity_var:
             name: anonymous_id

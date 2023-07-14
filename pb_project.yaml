@@ -29,6 +29,7 @@ entities:
     id_types:
       - session_main_id
       - session_id
+      - user_id
 
 id_types:
   - name: user_id
