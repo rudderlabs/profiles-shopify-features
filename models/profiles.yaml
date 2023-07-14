@@ -19,7 +19,6 @@ models:
       entity_key: session
       edge_sources:
         - from: inputs/rsPages
-        - from: inputs/rsIdentifies
 
   # Remove the section below, if you don't want to generate a feature table
   
@@ -559,7 +558,7 @@ models:
             window:
               order_by:
               - timestamp
-            from: inputs/rsIdentifies
+            from: inputs/rsPages
             
         - entity_var:
             name: anonymous_id
