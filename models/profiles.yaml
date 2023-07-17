@@ -315,29 +315,6 @@ models:
             select: max(date(session_end_time))
             description: The latest date on which an event has been recorded by the user
             #days since last cart add
-        - entity_var:
-            name: max_timestamp_cart_update
-            select: max(timestamp)
-            from: inputs/rsCartUpdate
-
-        - entity_var:
-            name: max_timestamp_cart_create
-            select: max(timestamp)
-            from: inputs/rsCartUpdate
-
-        - entity_var:
-            name: max_timestamp_bw_cart_create_update
-            select: CASE WHEN max_timestamp_cart_update>=max_timestamp_cart_create THEN max_timestamp_cart_update ELSE max_timestamp_cart_create end
-            dependencies:
-                - max_timestamp_cart_create
-                - max_timestamp_cart_update
-
-        - entity_var:
-            name: days_since_last_cart_add
-            select: "{{macro_datediff('max_timestamp_bw_cart_create_update')}}"
-            description: Number of days since the user has added a product to cart
-            dependencies:
-                - max_timestamp_bw_cart_create_update
 
         - entity_var:
             name: carts_in_past_1_days
