@@ -32,6 +32,14 @@ models:
           inputs:
             - column
           value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} datediff(day, date({{column}}), GETDATE()) {% endif %}"
+        - name: macro_datediff_n
+          inputs:
+            - column
+            - number_of_days
+          value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <={{number_of_days}} {% else %} datediff(day, date({{column}}), GETDATE()) <= {{number_of_days}} {% endif %}"
+
+      
+      
       vars:
         - entity_var:
             name: max_timestamp_cart_update
@@ -177,7 +185,7 @@ models:
             name: total_refund_in_past_1_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','1')}}"
             description: Total refund for a particular user in last 1 day
 
         #total_refund_in_past_7_days
@@ -185,7 +193,7 @@ models:
             name: total_refund_in_past_7_days
             select: sum(total_price_usd::real)
             from: inputs/rsOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','7')}}"
             description: Total refund for a particular user in last 1 day
 
         - entity_var:
@@ -252,13 +260,13 @@ models:
             name: active_days_in_past_7_days
             select: count(distinct date(session_start_time))
             from: models/rsSessionTable
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','7')}}"
             description: out of 7 days, how many days have recorded an event till date including today
         - entity_var:
             name: active_days_in_past_365_days
             select: count(distinct date(session_start_time))
             from: models/rsSessionTable
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','365')}}"
             description: out of 365 days, how many days have recorded an event till date including todays date
         - entity_var:
             name: total_sessions_till_date
@@ -270,19 +278,19 @@ models:
             name: total_sessions_last_week
             from: models/rsSessionTable
             select: count(*)
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','7')}}"
             description: total number of sessions over last 7 days.
         - entity_var:
             name: total_sessions_90_days
             from: models/rsSessionTable
             select: count(*)
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','90')}}"
             description: total number of sessions over last 90 days.
         - entity_var:
             name: total_sessions_365_days
             from: models/rsSessionTable
             select: count(*)
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','365')}}"
             description: total number of sessions over last 365 days.
         - entity_var:
             name: avg_session_length_in_sec_overall
@@ -294,14 +302,14 @@ models:
             name: avg_session_length_in_sec_last_week
             from: models/rsSessionTable
             select: avg(session_length)
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','7')}}"
             description: Average session length (in seconds) of all the user sessions that started in last 7 days
 
         - entity_var:
             name: avg_session_length_in_sec_365_days
             from: models/rsSessionTable
             select: avg(session_length)
-            where: "{{macro_datediff('session_start_time')}}"
+            where: "{{macro_datediff_n('session_start_time','365')}}"
             description: Average session length (in seconds) of all the user sessions that started in last 365 days
 
         - entity_var:
@@ -320,21 +328,21 @@ models:
             name: carts_in_past_1_days
             select: count(distinct token)
             from: inputs/rsCartUpdate
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','1')}}"
             description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 1 days
 
         - entity_var:
             name: carts_in_past_7_days
             select: count(distinct token)
             from: inputs/rsCartUpdate
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','7')}}"
             description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 7 days
 
         - entity_var:
             name: carts_in_past_365_days
             select: count(distinct token)
             from: inputs/rsCartUpdate
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','365')}}"
             description: A cart id is created for events such as create_cart,update_cart. This coln specifies how many cart ids were created in the past 365 days
 
         - entity_var:
@@ -354,21 +362,21 @@ models:
             name: products_added_in_past_1_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','1')}}"
             description: List of products added to cart by the user in last 1 days. (array with list of all product ids). It includes all purchased products plus current active cart.
 
         - entity_var:
             name: products_added_in_past_7_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','7')}}"
             description: List of products added to cart by the user in last 7 days. (array with list of all product ids). It includes all purchased products plus current active cart.
 
         - entity_var:
             name: products_added_in_past_365_days
             select: array_agg(distinct product_id)
             from: models/rsCartLineItems
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp',365)}}"
             description: List of products added to cart by the user in last 365 days. (array with list of all product ids). It includes all purchased products plus current active cart.
 
         - entity_var:
@@ -398,42 +406,42 @@ models:
             name: transactions_in_past_1_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','1')}}"
             description: Number of transactions in last 1 day
 
         - entity_var:
             name: transactions_in_past_90_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','90')}}"
             description: Number of transactions in last 90 day
 
         - entity_var:
             name: transactions_in_past_365_days
             select: count(*)::real
             from: models/rsOrderCreatedOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','365')}}"
             description: Number of transactions in last 365 day
 
         - entity_var:
             name: net_amt_spent_in_past_90_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','90')}}"
             description: Net amount i.e. sales-refund spent by the user in last 90 days.
 
         - entity_var:
             name: net_amt_spent_in_past_365_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','365')}}"
             description: Net amount i.e. sales-refund spent by the user in last 365 days.
 
         - entity_var:
             name: net_amt_spent_in_past_1_days
             select: sum(total_price_usd::real) - coalesce(sum(total_price_usd_order_cancelled::real), 0)
             from: models/rsOrderCreatedOrderCancelled
-            where: "{{macro_datediff('timestamp')}}"
+            where: "{{macro_datediff_n('timestamp','1')}}"
             description: Net amount i.e. sales-refund spent by the user in last 1 day.
 
         - entity_var:
