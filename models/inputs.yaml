@@ -89,16 +89,7 @@ inputs:
       role: shopify
       category: webhook
 
-  - name: rsCartCreate
-    table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_CREATE
-    occurred_at_col: timestamp
-    ids:
-      - select: "anonymous_id"
-        type: anonymous_id
-        entity: user
-    source_metadata:
-      role: shopify
-      category: webhook
+ 
   
   - name: rsOrderUpdated
     table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_UPDATED
