@@ -2,7 +2,7 @@
 name: shopify_features
 
 # Project's yaml schema version
-schema_version: 37
+schema_version: 38
 
 # WH Connection Profile to use.
 connection: shopify_wh
