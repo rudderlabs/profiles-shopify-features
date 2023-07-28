@@ -5,7 +5,7 @@ name: shopify_features
 schema_version: 37
 
 # WH Connection Profile to use.
-connection: shopify_wh
+connection: benji
 
 # Whether to allow inputs having no timestamps,
 # if true, data without timestamps are included when running models

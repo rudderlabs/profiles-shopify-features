@@ -564,3 +564,160 @@ models:
         - session_length
         - user_id
         - anonymous_id
+  
+  
+  - name: OrderCreated_Checkout_CartUpdate
+    model_type: sql_template
+    model_spec:
+      validity_time: 24h # 1 day
+      occurred_at_col : timestamp
+      materialization:
+        output_type: ephemeral
+        run_type: discrete
+      single_sql: |
+        {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") Checkout = this.DeRef("inputs/rsCheckout") CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
+          select anonymous_id,PRODUCTS,event,null as total_price_usd,timestamp from {{CartUpdate}}
+          union all
+          select anonymous_id,PRODUCTS,event,total_price_usd,timestamp from {{OrderCreated}}
+          union all
+          select ANONYMOUS_ID,PRODUCTS,event,null as total_price_usd,timestamp from {{Checkout}}
+          
+          
+          
+          {% endwith %}
+      ids:
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
+
+  - name: cart_events 
+    model_type: semantic_events_model
+    model_spec:
+      entity_key: user
+      validity_time: 24h
+      ref: models/OrderCreated_Checkout_CartUpdate
+      event_type_col: event_type #identify event type of each row
+      occurred_at_col: timestamp
+      # Only input vars are supported in Semantic Events Model to support the use of window functions.  
+      vars: 
+        - input_var: 
+            name: total_trans_value
+            select: sum(total_price_usd)
+            from: models/OrderCreated_Checkout_CartUpdate
+            default: 0
+            window:
+              partition_by:
+                - user_main_id
+            description: no. of items put by user in his/her cart. 
+      events:
+        - event_type: cart_updated
+          attributes:
+              - name: event_type_table
+                type: '{{warehouse.SqlKeyword(VARCHAR(255)}}'
+                select: event 
+                where: event = 'cart_update'
+              - name: products
+                type: '{{warehouse.SqlKeyword(VARCHAR(255)}}'
+                select: products
+        - event_type: checkout_started
+          attributes:
+              - name: event_type_table
+                type: '{{warehouse.SqlKeyword(VARCHAR(255)}}'
+                select: event 
+                where: event = 'checkout_started'
+              - name: products
+                type: '{{warehouse.SqlKeyword(VARCHAR(255)}}'
+                select: products
+        - event_type: order_created
+          attributes:
+              - name: event_type_table
+                type: '{{warehouse.SqlKeyword(VARCHAR(255)}}'
+                select: event 
+                where: event = 'order_created'
+              - name: products
+                type: '{{warehouse.SqlKeyword(VARCHAR(255)}}'
+                select: products
+  - name: cart_edf
+    model_type: events_driven_funnel
+    model_spec:
+      # The way events driven funnel works is that it progressively creates two tables using a semantic events table as input:
+      # - events_chain_table
+      #        # This is an intermediate table that is the result of one or more self joins of the semantic events table. 
+      #        # The final state of this table is referable via ref: /models/carts_edf/events_chain_table
+      # - entity_state_table
+      #        # This is a table, with entity as its primary key, that is intended to represent cumulative status of funnel prorgess of an entity.
+      #        # It is also progressively refined as subsequent events are discovered.
+      #        # The final state of this table is referable via ref: /models/carts_ece/entity_state_table
+      #   
+      # Anywhere in the spec below, when you find entity_state_columns, it means, behind the scenes we are appending(or updating) entity_state_table. 
+      # entity_state_table value expressions are usually defined as aggregations over matching rows of events_chain_table.
+      # And when you find event_chain_columns, it means, behind the scenes we are appending(or updating) events_chain_table.
+
+      validity_time: 24h # 1 day
+
+      # A subset of entities are assigned funnel state. entity_spec selects this subset based on their traits. Those traits are defined by where clause
+      # under entity_spec. While the filter is being applied, some columns are also appended to the entity_state_table output. These columns are specified
+      # under entity_state_columns.
+      entity_key: user
+      entity_spec:
+        from: models/shopify_user_features
+        where:
+          - days_since_last_cart_add < 90
+        entity_state_columns:
+          - value: "days_since_last_cart_add"
+            as: days_since_last_cart_add
+        #   - value: "nothing_seen"
+        #     as: funnel_stage
+
+  #     # The chain of events that must occur or not occur during the funnel movement are defined under events_spec.
+  #     # The event constraints are specified as a list under the where key.
+  #     # Each event constraint has a where clause which is used to generate filter SQL for the current round of self-join.
+  #     # Post filteration, additional columns are appended/updated in entity_state_table and events_chain_table
+  #     # Columns are appended only when events are supposed to have "occurred" instead of having "not occurred".
+      events_spec:
+        from: models/cart_events
+        where:
+          - occurred:
+              name: e1
+              type: cart_updated
+              where:
+                after: "{{warehouse.TimeAdd('days',-50,end_time)}}"
+                before: "{{end_time}}"
+                attributes:
+                  - PRODUCTS is not null
+              event_chain_columns:
+                - value: "timestamp"
+                  as:    start_timestamp
+                - value: timestamp
+                  as: first_e1_occurence
+              entity_state_columns:
+                - value: "e1_seen"
+                  as: funnel_stage
+          - occurred:
+              name: e2
+              type: checkout_started
+              where:
+                # after: "{{warehouse.TimeAdd('hours',2, '{{e1}}.start_timestamp')}}"
+                # before: "{{warehouse.TimeAdd('hours',4, '{{e1}}.start_timestamp')}}"
+                attributes:
+                  - "{{cart_events}}.PRODUCTS is not null"
+              event_chain_columns:
+                - value: "{{e1}}.start_timestamp"
+                  as:    end_timestamp2
+              entity_state_columns:
+                - value: "e2_seen"
+                  as: funnel_stage
+          - occurred:
+              name: e3
+              type: order_created
+              where:
+                # after: "{{warehouse.TimeAdd('hours',2, '{{e3}}.start_timestamp')}}"
+                # before: "{{warehouse.TimeAdd('hours',4, '{{e3}}.start_timestamp')}}"
+                attributes:
+                  - "{{cart_events}}.PRODUCTS is not null"
+              event_chain_columns:
+                - value: "{{e2}}.end_timestamp2"
+                  as:    end_timestamp3
+              entity_state_columns:
+                - value: "e3_seen"
+                  as: funnel_stage
