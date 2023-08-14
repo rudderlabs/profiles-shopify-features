@@ -14,9 +14,11 @@ models:
         - select: "user_id"
           type: user_id
           entity: user
+          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+          to_default_stitcher: true
   - name: rsItemsPurchasedEverSku
     model_type: sql_template
     model_spec:
@@ -59,9 +61,11 @@ models:
         - select: "user_id"
           type: user_id
           entity: user
+          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+          to_default_stitcher: true
   - name: rsOrderCreatedOrderCancelled
     model_type: sql_template
     model_spec:
@@ -99,12 +103,15 @@ models:
         - select: "user_id"
           type: user_id
           entity: user
+          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+          to_default_stitcher: true
         - select: "cart_token"
           type: cart_token
           entity: user
+          to_default_stitcher: true
   - name: rsCartLineItems
     model_type: sql_template
     model_spec:
@@ -147,6 +154,7 @@ models:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+          to_default_stitcher: true
   - name: rsLastCartStatus
     model_type: sql_template
     model_spec:
@@ -195,6 +203,8 @@ models:
         - select: "user_id"
           type: user_id
           entity: user
+          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+          to_default_stitcher: true
