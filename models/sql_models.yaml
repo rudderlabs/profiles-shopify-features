@@ -19,6 +19,14 @@ models:
           type: anonymous_id
           entity: user
           to_default_stitcher: true
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids:
+          - user
+        with_columns:
+          - name: user_id
+          - name: anonymous_id
   - name: rsItemsPurchasedEverSku
     model_type: sql_template
     model_spec:
@@ -31,6 +39,11 @@ models:
           select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
             from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
         {% endwith %}
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids: []
+        with_columns: []
   - name: rsItemsPurchasedEverCte
     model_type: sql_template
     model_spec:
@@ -43,6 +56,11 @@ models:
          SELECT * , row_number() OVER (PARTITION BY token ORDER BY timestamp DESC) AS rn
             FROM   {{sku}}
           {% endwith %}
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids: []
+        with_columns: []
   - name: rsItemsPurchasedEver
     model_type: sql_template
     model_spec:
@@ -66,6 +84,14 @@ models:
           type: anonymous_id
           entity: user
           to_default_stitcher: true
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids:
+          - user
+        with_columns:
+          - name: user_id
+          - name: anonymous_id
   - name: rsOrderCreatedOrderCancelled
     model_type: sql_template
     model_spec:
@@ -73,7 +99,8 @@ models:
       materialization:
         output_type: ephemeral
         run_type: discrete
-      single_sql: "{% with OrderCreated = this.DeRef(\"inputs/rsOrderCreated\") OrderCancelled = this.DeRef(\"inputs/rsOrderCancelled\") OrderUpdated = this.DeRef(\"inputs/rsOrderUpdated\")%}
+      single_sql: |
+        {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") OrderCancelled = this.DeRef("inputs/rsOrderCancelled") OrderUpdated = this.DeRef("inputs/rsOrderUpdated") %}
          select
              a.ANONYMOUS_ID,
              a.user_id,
@@ -93,12 +120,10 @@ models:
              b.timestamp as timestamp_order_cancelled,
              b.products as products_order_cancelled,
              c.fulfillment_status
-         from {{OrderCreated}} a 
+         from {{OrderCreated}} a
          left join {{OrderCancelled}} b on a.user_id = b.user_id and a.order_number = b.order_number
          left join {{OrderUpdated}} c on a.user_id = c.user_id and a.order_number = c.order_number
-          
-                {% endwith %}
-         "
+        {% endwith %}
       ids:
         - select: "user_id"
           type: user_id
@@ -112,6 +137,15 @@ models:
           type: cart_token
           entity: user
           to_default_stitcher: true
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids:
+          - user
+        with_columns:
+          - name: user_id
+          - name: anonymous_id
+          - name: cart_token
   - name: rsCartLineItems
     model_type: sql_template
     model_spec:
@@ -155,6 +189,13 @@ models:
           type: anonymous_id
           entity: user
           to_default_stitcher: true
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids:
+          - user
+        with_columns:
+          - name: anonymous_id
   - name: rsLastCartStatus
     model_type: sql_template
     model_spec:
@@ -208,3 +249,11 @@ models:
           type: anonymous_id
           entity: user
           to_default_stitcher: true
+      contract:
+        is_optional: false
+        is_event_stream: false
+        with_entity_ids:
+          - user
+        with_columns:
+          - name: user_id
+          - name: anonymous_id
