@@ -36,8 +36,8 @@ models:
         run_type: discrete
       single_sql: |
         {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
-          select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
-            from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
+          select null as SKU,products,token,ANONYMOUS_ID,USER_ID,"timestamp",order_number,cart_token
+            from (select * from {{OrderCreated}} ) t
         {% endwith %}
       contract:
         is_optional: false
@@ -53,7 +53,7 @@ models:
         run_type: discrete
       single_sql: |
         {% with sku = this.DeRef("models/rsItemsPurchasedEverSku") %}
-         SELECT * , row_number() OVER (PARTITION BY token ORDER BY timestamp DESC) AS rn
+         SELECT * , row_number() OVER (PARTITION BY token ORDER BY "timestamp" DESC) AS rn
             FROM   {{sku}}
           {% endwith %}
       contract:
@@ -155,34 +155,34 @@ models:
         run_type: discrete
       single_sql: |
         {% with CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
-        SELECT to_char(t.value['brand']) AS brand,
-            t.value['discounted_price']::real AS discounted_price,
-            to_char(t.value['gift_card']) AS gift_card,
-            t.value['grams']::real AS grams,
-            to_char(t.value['id']) AS id,
-            to_char(t.value['key']) AS KEY,
-            t.value['line_price']::real AS line_price,
-            t.value['original_line_price']::real AS original_line_price,
-            t.value['original_price']::real AS original_price,
-            t.value['price']::real AS price,
-            to_char(t.value['product_id']) AS product_id,
-            to_char(t.value['properties']) AS properties,
-            t.value['quantity']::real AS quantity,
-            to_char(t.value['sku']) AS sku,
-            to_char(t.value['taxable']) AS taxable,
-            to_char(t.value['title']) AS title,
-            t.value['total_discount']::real AS total_discount,
-            to_char(t.value['variant']) AS _VARIANT_,
+        SELECT null AS brand,
+            null AS discounted_price,
+            null AS gift_card,
+            null AS grams,
+            null AS id,
+            null AS KEY,
+            null AS line_price,
+            null AS original_line_price,
+            null AS original_price,
+            null AS price,
+            null AS product_id,
+            null AS properties,
+            null AS quantity,
+            null AS sku,
+            null AS taxable,
+            null AS title,
+            null AS total_discount,
+            null AS _VARIANT_,
             products,
-            anonymous_id,timestamp, token
+            anonymous_id,"timestamp", token
         FROM
         (SELECT *
         FROM
             (SELECT *,
                     row_number() over(PARTITION BY anonymous_id, token
-                                                ORDER BY timestamp DESC) AS rn
-            FROM {{CartUpdate}} where products is not null)
-        WHERE rn = 1), table(flatten(parse_json(products))) t
+                                                ORDER BY "timestamp" DESC) AS rn
+            FROM {{CartUpdate}})
+        WHERE rn = 1) t
                 {% endwith %}
       ids:
         - select: "anonymous_id"
