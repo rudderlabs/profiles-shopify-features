@@ -15,7 +15,7 @@ inputs:
         - name: email
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES
-      table: rs_profiles_2.identifies
+      table: rs_profiles_3.identifies
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -45,7 +45,7 @@ inputs:
         - name: anonymous_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
-      table: rs_profiles_2.tracks
+      table: rs_profiles_3.tracks
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -73,7 +73,7 @@ inputs:
         - name: context_session_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
-      table: rs_profiles_2.pages
+      table: rs_profiles_3.pages
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -107,7 +107,7 @@ inputs:
         - name: anonymous_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CREATED
-      table: rs_profiles_2.order_created
+      table: rs_profiles_3.order_created
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -133,7 +133,7 @@ inputs:
         - name: anonymous_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CANCELLED
-      table: rs_profiles_2.order_cancelled
+      table: rs_profiles_3.order_cancelled
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -158,7 +158,7 @@ inputs:
         - name: anonymous_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_UPDATE
-      table: rs_profiles_2.cart_update
+      table: rs_profiles_3.cart_update
       occurred_at_col: "timestamp"
       ids:
         - select: "anonymous_id"
@@ -180,7 +180,7 @@ inputs:
         - name: anonymous_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_UPDATED
-      table: rs_profiles_2.order_updated
+      table: rs_profiles_3.order_updated
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
