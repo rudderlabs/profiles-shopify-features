@@ -9,13 +9,14 @@ inputs:
       with_entity_ids:
         - user
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: user_id
         - name: anonymous_id
         - name: email
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES
+      table: rs_profiles_3.identifies
+      occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
           type: user_id
@@ -39,12 +40,13 @@ inputs:
       with_entity_ids:
         - user
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
+      table: rs_profiles_3.tracks
+      occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
           type: user_id
@@ -65,13 +67,14 @@ inputs:
         - user
         - session
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: user_id
         - name: anonymous_id
         - name: context_session_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
+      table: rs_profiles_3.pages
+      occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
           type: user_id
@@ -81,11 +84,11 @@ inputs:
           type: anonymous_id
           entity: user
           to_default_stitcher: true
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
+        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id, 'FM999999999999999999'), 'null'))"
           type: session_id
           entity: user
           to_default_stitcher: true
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
+        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id, 'FM999999999999999999'), 'null'))"
           type: session_id
           entity: session
           to_default_stitcher: true
@@ -99,12 +102,13 @@ inputs:
       with_entity_ids:
         - user
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CREATED
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CREATED
+      table: rs_profiles_3.order_created
+      occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
           type: user_id
@@ -124,12 +128,13 @@ inputs:
       with_entity_ids:
         - user
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CANCELLED
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CANCELLED
+      table: rs_profiles_3.order_cancelled
+      occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
           type: user_id
@@ -149,11 +154,12 @@ inputs:
       with_entity_ids:
         - user
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_UPDATE
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_UPDATE
+      table: rs_profiles_3.cart_update
+      occurred_at_col: "timestamp"
       ids:
         - select: "anonymous_id"
           type: anonymous_id
@@ -169,12 +175,13 @@ inputs:
       with_entity_ids:
         - user
       with_columns:
-        - name: timestamp
+        - name: "timestamp"
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_UPDATED
-      occurred_at_col: timestamp
+      # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_UPDATED
+      table: rs_profiles_3.order_updated
+      occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
           type: user_id
