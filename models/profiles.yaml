@@ -24,16 +24,6 @@ models:
     model_spec:
       validity_time: 24h # 1 day
       entity_key: user
-      macros:
-        - name: macro_datediff
-          inputs:
-            - column
-          value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) {% else %} datediff(day, date({{column}}), GETDATE()) {% endif %}"
-        - name: macro_datediff_n
-          inputs:
-            - column
-            - number_of_days
-          value: "{% if !(end_time|isnil) %} datediff(day, date({{column}}), date('{{end_time.Format(\"2006-01-02 15:04:05\")}}')) <={{number_of_days}} {% else %} datediff(day, date({{column}}), GETDATE()) <= {{number_of_days}} {% endif %}"
       vars:
         - entity_var:
             name: max_timestamp_cart_update
@@ -41,7 +31,7 @@ models:
             from: inputs/rsCartUpdate
         - entity_var:
             name: days_since_last_cart_add
-            select: "{{macro_datediff('max_timestamp_cart_update')}}"
+            select: "{{macro_datediff('{{user.Var(\"max_timestamp_cart_update\")}}')}}"
             description: Number of days since the user has added a product to cart
             dependencies:
               - max_timestamp_cart_update
@@ -56,20 +46,20 @@ models:
             description: The total value of products that are part of the last transaction.
         - entity_var:
             name: max_timestamp_bw_tracks_pages
-            select: CASE WHEN max_timestamp_tracks>=max_timestamp_pages THEN max_timestamp_tracks ELSE max_timestamp_pages END
+            select: CASE WHEN {{user.Var("max_timestamp_tracks")}}>={{user.Var("max_timestamp_pages")}} THEN {{user.Var("max_timestamp_tracks")}} ELSE {{user.Var("max_timestamp_pages")}} END
             dependencies:
               - max_timestamp_tracks
               - max_timestamp_pages
         #days since last seen
         - entity_var:
             name: days_since_last_seen
-            select: "{{macro_datediff('max_timestamp_bw_tracks_pages')}}"
+            select: "{{macro_datediff('{{user.Var(\"max_timestamp_bw_tracks_pages\")}}')}}"
             dependencies:
               - max_timestamp_bw_tracks_pages
         #Churn features
         - entity_var:
             name: is_churned_7_days
-            select: case when days_since_last_seen > 7 then 1 else 0 end
+            select: case when {{user.Var("days_since_last_seen")}} > 7 then 1 else 0 end
             description: it specifies if there is any activity observed in the last n days. It is dependent on days_since_last_seen
             dependencies:
               - days_since_last_seen
@@ -80,7 +70,7 @@ models:
             from: inputs/rsOrderCreated
         - entity_var:
             name: days_since_last_purchase
-            select: "{{macro_datediff('max_timestamp_order_created')}}"
+            select: "{{macro_datediff('{{user.Var(\"max_timestamp_order_created\")}}')}}"
             description: Number of days since the user purchased the latest product
             dependencies:
               - max_timestamp_order_created
@@ -91,7 +81,7 @@ models:
             from: inputs/rsOrderCreated
         - entity_var:
             name: days_since_first_purchase
-            select: "{{macro_datediff('min_timestamp_order_created')}}"
+            select: "{{macro_datediff('{{user.Var(\"min_timestamp_order_created\")}}')}}"
             description: Number of days since the user purchased the first product
             dependencies:
               - min_timestamp_order_created
@@ -340,7 +330,7 @@ models:
             name: last_cart_value_in_dollars
             select: sum(line_price)
             from: models/rsCartLineItems
-            where: token=latest_cart_id
+            where: token={{user.Var("latest_cart_id")}}
             description: The value of products added in the latest cart.
             dependencies:
               - latest_cart_id
@@ -470,7 +460,7 @@ models:
             from: inputs/rsPages
         - entity_var:
             name: session_length
-            select: TIMESTAMPDIFF(SECOND, session_start_time, session_end_time)
+            select: TIMESTAMPDIFF(SECOND, {{session.Var("session_start_time")}}, {{session.Var("session_end_time")}})
             dependencies:
               - session_end_time
               - session_start_time
