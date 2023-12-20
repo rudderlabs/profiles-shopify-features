@@ -20,15 +20,12 @@ inputs:
         - select: "user_id"
           type: user_id
           entity: user
-          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
         - select: "lower(email)"
           type: email
           entity: user
-          to_default_stitcher: true
   - name: rsTracks
     source_metadata:
       role: shopify
@@ -49,11 +46,9 @@ inputs:
         - select: "user_id"
           type: user_id
           entity: user
-          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
   - name: rsPages
     source_metadata:
       role: shopify
@@ -76,19 +71,15 @@ inputs:
         - select: "user_id"
           type: user_id
           entity: user
-          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
         - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
           type: session_id
           entity: user
-          to_default_stitcher: true
         - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
           type: session_id
           entity: session
-          to_default_stitcher: true
   - name: rsOrderCreated
     source_metadata:
       role: shopify
@@ -109,11 +100,9 @@ inputs:
         - select: "user_id"
           type: user_id
           entity: user
-          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
   - name: rsOrderCancelled
     source_metadata:
       role: shopify
@@ -134,11 +123,9 @@ inputs:
         - select: "user_id"
           type: user_id
           entity: user
-          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
   - name: rsCartUpdate
     source_metadata:
       role: shopify
@@ -158,7 +145,6 @@ inputs:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
   - name: rsOrderUpdated
     source_metadata:
       role: shopify
@@ -179,8 +165,6 @@ inputs:
         - select: "user_id"
           type: user_id
           entity: user
-          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-          to_default_stitcher: true
