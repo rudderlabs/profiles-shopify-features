@@ -13,7 +13,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
+      table: RUDDERSTACK_TEST_DB.PROFILES_SIMULATED_DATA.TRACKS
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -38,7 +38,7 @@ inputs:
         - name: anonymous_id
         - name: context_session_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
+      table: RUDDERSTACK_TEST_DB.PROFILES_SIMULATED_DATA.PAGES
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
