@@ -7,8 +7,8 @@ models:
         output_type: ephemeral
         run_type: discrete
       single_sql: |
-        {% set contract = BuildContract('{ "is_event_stream": false, "with_entity_ids":["user","session"], "with_columns":[{"name":"session_end_time"},{"name":"session_start_time"},{"name":"session_length"}] }') %}
-        {% with SessionFeature = this.DeRef("models/shopify_session_features",contract=contract)%}
+        {% set contract = BuildContract('{ "is_event_stream": false, "with_entity_ids":["session"], "with_columns":[{"name":"session_end_time"},{"name":"session_start_time"},{"name":"session_length"}] }') %}
+        {% with SessionFeature = this.DeRef("models/shopify_session_features",contract)%}
             select * from {{SessionFeature}}
         {% endwith %}
       ids:
