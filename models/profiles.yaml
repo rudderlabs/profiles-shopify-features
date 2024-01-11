@@ -442,13 +442,19 @@ var_groups:
           name: session_end_time
           select: max(timestamp)
           from: inputs/rsPages
+          materialization:
+            enable_status: must_have
       - entity_var:
           name: session_start_time
           select: min(timestamp)
           from: inputs/rsPages
+          materialization:
+            enable_status: must_have
       - entity_var:
           name: session_length
           select: TIMESTAMPDIFF(SECOND, {{session.Var("session_start_time")}}, {{session.Var("session_end_time")}})
+          materialization:
+            enable_status: must_have
       - entity_var:
           name: user_id
           select: last_value(user_id)
