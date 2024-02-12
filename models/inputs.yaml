@@ -15,7 +15,7 @@ inputs:
         - name: email
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES
-      table: rs_profiles_3.identifies
+      table: profiles_new.identifies
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -42,7 +42,7 @@ inputs:
         - name: anonymous_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
-      table: rs_profiles_3.tracks
+      table: profiles_new.tracks
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
@@ -67,7 +67,7 @@ inputs:
         - name: context_session_id
     app_defaults:
       # table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
-      table: rs_profiles_3.pages
+      table: profiles_new.pages
       occurred_at_col: "timestamp"
       ids:
         - select: "user_id"
