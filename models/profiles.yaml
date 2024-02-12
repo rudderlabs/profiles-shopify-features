@@ -30,6 +30,7 @@ var_groups:
       - entity_var:
           name: days_since_last_seen
           select: "{{macro_datediff('{{user.Var(\"max_timestamp\")}}')}}"
+          default: 0
       - entity_var:
           name: is_churned_7_days
           select: case when {{user.Var("days_since_last_seen")}} > 7 then 1 else 0 end
