@@ -7,8 +7,7 @@ models:
         output_type: ephemeral
         run_type: discrete
       single_sql: |
-        {% set contract = BuildContract('{ "is_event_stream": false, "with_entity_ids":["session"], "with_columns":[{"name":"session_end_time"},{"name":"session_start_time"},{"name":"session_length"}] }') %}
-        {% with SessionFeature = this.DeRef("models/shopify_session_features",contract=contract)%}
+        {% with SessionFeature = this.DeRef("models/shopify_session_features")%}
             select * from {{SessionFeature}}
         {% endwith %}
       ids:
@@ -35,8 +34,23 @@ models:
         run_type: discrete
       single_sql: |
         {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
-          select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
-            from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
+        SELECT 
+          value AS SKU,
+          products,
+          token,
+          ANONYMOUS_ID,
+          USER_ID,
+          TIMESTAMP,
+          order_number,
+          cart_token
+        FROM (
+          SELECT 
+            get_json_object(products, "$[0].sku") AS value,
+            *
+          FROM 
+            {{OrderCreated}}
+          where products is not null
+        )
         {% endwith %}
       contract:
         is_optional: false
@@ -149,34 +163,52 @@ models:
         run_type: discrete
       single_sql: |
         {% with CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
-        SELECT to_char(t.value['brand']) AS brand,
-            t.value['discounted_price']::real AS discounted_price,
-            to_char(t.value['gift_card']) AS gift_card,
-            t.value['grams']::real AS grams,
-            to_char(t.value['id']) AS id,
-            to_char(t.value['key']) AS KEY,
-            t.value['line_price']::real AS line_price,
-            t.value['original_line_price']::real AS original_line_price,
-            t.value['original_price']::real AS original_price,
-            t.value['price']::real AS price,
-            to_char(t.value['product_id']) AS product_id,
-            to_char(t.value['properties']) AS properties,
-            t.value['quantity']::real AS quantity,
-            to_char(t.value['sku']) AS sku,
-            to_char(t.value['taxable']) AS taxable,
-            to_char(t.value['title']) AS title,
-            t.value['total_discount']::real AS total_discount,
-            to_char(t.value['variant']) AS _VARIANT_,
+        SELECT value_brand AS brand,
+        value_discounted_price::real AS discounted_price,
+        value_gift_card AS gift_card,
+        value_grams::real AS grams,
+        value_id AS id,
+        value_KEY AS KEY,
+        value_line_price::real AS line_price,
+        value_original_line_price::real AS original_line_price,
+        value_original_price::real AS original_price,
+        value_price::real AS price,
+        value_product_id AS product_id,
+        value_properties AS properties,
+        value_quantity::real AS quantity,
+        value_sku AS sku,
+        value_taxable AS taxable,
+        value_title AS title,
+        value_total_discount::real AS total_discount,
+        value_variant AS _VARIANT_,
             products,
             anonymous_id,timestamp, token
         FROM
-        (SELECT *
+        (SELECT *,
+                get_json_object(products, "$[0].brand") AS value_brand,
+                get_json_object(products, "$[0].discounted_price") AS value_discounted_price,
+                get_json_object(products, "$[0].gift_card") AS value_gift_card,
+                get_json_object(products, "$[0].grams") AS value_grams,
+                get_json_object(products, "$[0].id") AS value_id,
+                get_json_object(products, "$[0].key") AS value_KEY,
+                get_json_object(products, "$[0].line_price") AS value_line_price,
+                get_json_object(products, "$[0].original_line_price") AS value_original_line_price,
+                get_json_object(products, "$[0].original_price") AS value_original_price,
+                get_json_object(products, "$[0].price") AS value_price,
+                get_json_object(products, "$[0].product_id") AS value_product_id,
+                get_json_object(products, "$[0].properties") AS value_properties,
+                get_json_object(products, "$[0].quantity") AS value_quantity,
+                get_json_object(products, "$[0].sku") AS value_sku,
+                get_json_object(products, "$[0].taxable") AS value_taxable,
+                get_json_object(products, "$[0].title") AS value_title,
+                get_json_object(products, "$[0].total_discount") AS value_total_discount,
+                get_json_object(products, "$[0].variant") AS value_variant
         FROM
             (SELECT *,
                     row_number() over(PARTITION BY anonymous_id, token
                                                 ORDER BY timestamp DESC) AS rn
             FROM {{CartUpdate}} where products is not null)
-        WHERE rn = 1), table(flatten(parse_json(products))) t
+        WHERE rn = 1)
                 {% endwith %}
       ids:
         - select: "anonymous_id"

@@ -14,7 +14,7 @@ inputs:
         - name: anonymous_id
         - name: email
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.IDENTIFIES
+      table: temp_dev.table_dump.test_IDENTIFIES
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -40,7 +40,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.TRACKS
+      table: temp_dev.table_dump.test_TRACKS
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -65,7 +65,7 @@ inputs:
         - name: anonymous_id
         - name: context_session_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.PAGES
+      table: temp_dev.table_dump.test_PAGES
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -74,10 +74,10 @@ inputs:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
+        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id, '999'), 'null'))"
           type: session_id
           entity: user
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
+        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id, '999'), 'null'))"
           type: session_id
           entity: session
   - name: rsOrderCreated
@@ -94,7 +94,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CREATED
+      table: temp_dev.table_dump.test_ORDER_CREATED
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -117,7 +117,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_CANCELLED
+      table: temp_dev.table_dump.test_ORDER_CANCELLED
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -139,7 +139,7 @@ inputs:
         - name: timestamp
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.CART_UPDATE
+      table: temp_dev.table_dump.test_CART_UPDATE
       occurred_at_col: timestamp
       ids:
         - select: "anonymous_id"
@@ -159,7 +159,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.DATA_APPS_SIMULATED_SHOPIFY.ORDER_UPDATED
+      table: temp_dev.table_dump.test_order_updated
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
