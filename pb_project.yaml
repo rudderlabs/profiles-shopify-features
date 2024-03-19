@@ -1,9 +1,9 @@
 # Project name
-name: shopify_features
+name: base_features
 # Project's yaml schema version
-schema_version: 49
+schema_version: 44
 # WH Connection Profile to use.
-connection: dev_wh1
+connection: test
 # Whether to allow inputs having no timestamps,
 # if true, data without timestamps are included when running models
 include_untimed: true
@@ -13,17 +13,12 @@ model_folders:
 # Entities in this project and their ids.
 entities:
   - name: user
-    id_stitcher: models/shopify_user_id_stitcher
+    id_stitcher: models/rudder_user_id_stitcher
     id_types:
       - user_id
       - anonymous_id
       - email
       - cart_token
-  - name: session
-    id_stitcher: models/shopify_session_id_stitcher
-    id_types:
-      - session_main_id
-      - session_id
 id_types:
   - name: user_id
   - name: cart_token
@@ -41,5 +36,3 @@ id_types:
         regex: ".+@.+"
       - type: exclude
         value: "test@company.com"
-  - name: session_id
-  - name: session_main_id

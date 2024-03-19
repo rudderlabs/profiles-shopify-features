@@ -1,8 +1,38 @@
 inputs:
+  - name: rsIdentifies
+    source_metadata:
+      role: "*"
+      category: "webhook|null"
+    contract:
+      is_optional: false
+      is_event_stream: true
+      with_entity_ids:
+        - user
+      with_columns:
+        - name: timestamp
+        - name: user_id
+        - name: anonymous_id
+        - name: email
+    app_defaults:
+      table: PROFILES_INTEGRATION_TEST.identifies
+      occurred_at_col: timestamp
+      ids:
+        - select: "user_id"
+          type: user_id
+          entity: user
+          to_default_stitcher: true
+        - select: "anonymous_id"
+          type: anonymous_id
+          entity: user
+          to_default_stitcher: true
+        - select: "lower(email)"
+          type: email
+          entity: user
+          to_default_stitcher: true
   - name: rsTracks
     source_metadata:
-      role: shopify
-      category: webhook
+      role: "*"
+      category: "webhook|null"
     contract:
       is_optional: false
       is_event_stream: true
@@ -13,43 +43,56 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.PROFILES_SIMULATED_DATA.TRACKS
+      table: PROFILES_INTEGRATION_TEST.tracks
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
           type: user_id
           entity: user
+          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
+          to_default_stitcher: true
   - name: rsPages
     source_metadata:
-      role: shopify
-      category: webhook
+      role: "*"
+      category: "webhook|null"
     contract:
       is_optional: false
       is_event_stream: true
       with_entity_ids:
         - user
-        - session
       with_columns:
         - name: timestamp
         - name: user_id
         - name: anonymous_id
-        - name: context_session_id
     app_defaults:
-      table: RUDDERSTACK_TEST_DB.PROFILES_SIMULATED_DATA.PAGES
+      table: PROFILES_INTEGRATION_TEST.pages
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
           type: user_id
           entity: user
+          to_default_stitcher: true
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
-          type: session_id
+          to_default_stitcher: true
+  - name: rsOrderCompleted
+    contract:
+      is_optional: false
+      is_event_stream: true
+      with_entity_ids:
+        - user
+      with_columns:
+        - name: timestamp
+        - name: user_id
+    app_defaults:
+      table: PROFILES_INTEGRATION_TEST.order_completed
+      occurred_at_col: timestamp
+      ids:
+        - select: "user_id"
+          type: user_id
           entity: user
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
-          type: session_id
-          entity: session
+          to_default_stitcher: true
