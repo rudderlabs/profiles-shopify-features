@@ -14,7 +14,7 @@ inputs:
         - name: anonymous_id
         - name: email
     app_defaults:
-      table: PROFILES_INTEGRATION_TEST.identifies
+      table: identifies
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -43,7 +43,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: PROFILES_INTEGRATION_TEST.tracks
+      table: tracks
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -68,7 +68,7 @@ inputs:
         - name: user_id
         - name: anonymous_id
     app_defaults:
-      table: PROFILES_INTEGRATION_TEST.pages
+      table: pages
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
@@ -89,7 +89,7 @@ inputs:
         - name: timestamp
         - name: user_id
     app_defaults:
-      table: PROFILES_INTEGRATION_TEST.order_completed
+      table: order_completed
       occurred_at_col: timestamp
       ids:
         - select: "user_id"
