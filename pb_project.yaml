@@ -1,7 +1,7 @@
 # Project name
 name: shopify_features
 # Project's yaml schema version
-schema_version: 54
+schema_version: 61
 # WH Connection Profile to use.
 connection: shopify_wh
 # Whether to allow inputs having no timestamps,
