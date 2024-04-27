@@ -34,7 +34,9 @@ models:
         - last_seen_date
         - total_sessions_90_days
         - total_sessions_365_days
-
+        - has_seen_recently
+        - last_seen_category
+        - last_seen_days_array
   - name: shopify_session_features
     model_type: feature_table_model
     model_spec:
@@ -69,6 +71,29 @@ var_groups:
           name: days_since_last_seen
           select: "{{macro_datediff('{{user.Var(\"max_timestamp_bw_tracks_pages\")}}')}}"
           default: 0
+        # New boolean feature based on days_since_last_seen
+      - entity_var:
+          name: has_seen_recently
+          select: CASE 
+                    WHEN uniform(0, 1, random()) > 0.99 THEN null
+                    WHEN {{user.Var("days_since_last_seen")}} <= 7 
+                    THEN true
+                    ELSE false END
+          description: Whether the user has added a product to seen recently (within the last 7 days).
+        # New categorical feature based on days_since_last_seen
+      - entity_var:
+          name: last_seen_category
+          select: CASE
+                  WHEN uniform(0, 1, random()) > 0.99 THEN null
+                  WHEN {{user.Var("days_since_last_seen")}} <= 7 THEN 'recent'
+                  WHEN {{user.Var("days_since_last_seen")}} <= 30 THEN 'moderate'
+                  ELSE 'inactive' END  
+          description: Categorical variable indicating seen activity.
+      # New array type feature based on days_since_last_seen
+      - entity_var:
+          name: last_seen_days_array
+          select: CASE WHEN uniform(0, 1, random()) > 0.99 THEN null ELSE TO_ARRAY({{user.Var("days_since_last_seen")}}) END
+          description: Array type variable containing days since last seen 
       - entity_var:
           name: is_churned_7_days
           select: case when {{user.Var("days_since_last_seen")}} > 7 then 1 else 0 end
