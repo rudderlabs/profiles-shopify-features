@@ -75,7 +75,7 @@ var_groups:
       - entity_var:
           name: has_seen_recently
           select: CASE 
-                    WHEN uniform(0, 1, random()) > 0.99 THEN null
+                    WHEN random() > 0.99 THEN null
                     WHEN {{user.Var("days_since_last_seen")}} <= 7 
                     THEN true
                     ELSE false END
@@ -84,7 +84,7 @@ var_groups:
       - entity_var:
           name: last_seen_category
           select: CASE
-                  WHEN uniform(0, 1, random()) > 0.99 THEN null
+                  WHEN random() > 0.99 THEN null
                   WHEN {{user.Var("days_since_last_seen")}} <= 7 THEN 'recent'
                   WHEN {{user.Var("days_since_last_seen")}} <= 30 THEN 'moderate'
                   ELSE 'inactive' END  
@@ -92,7 +92,7 @@ var_groups:
       # New array type feature based on days_since_last_seen
       - entity_var:
           name: last_seen_days_array
-          select: CASE WHEN uniform(0, 1, random()) > 0.99 THEN null ELSE TO_ARRAY({{user.Var("days_since_last_seen")}}) END
+          select: CASE WHEN random() > 0.99 THEN null ELSE TO_ARRAY({{user.Var("days_since_last_seen")}}) END
           description: Array type variable containing days since last seen 
       - entity_var:
           name: is_churned_7_days
