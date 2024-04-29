@@ -94,7 +94,7 @@ var_groups:
           name: random_agg_event
           select: CASE WHEN random() > 0.99 THEN null ELSE array_agg(Distinct EVENT) END
           from: inputs/rsTracks
-          description: Array type variable containing days since last seen 
+          description: Array type variable containing events
       - entity_var:
           name: is_churned_7_days
           select: case when {{user.Var("days_since_last_seen")}} > 7 then 1 else 0 end
