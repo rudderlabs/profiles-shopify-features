@@ -36,7 +36,7 @@ models:
         - total_sessions_365_days
         - has_seen_recently
         - last_seen_category
-        - last_seen_days_array
+        - random_agg_event
   - name: shopify_session_features
     model_type: feature_table_model
     model_spec:
@@ -91,8 +91,9 @@ var_groups:
           description: Categorical variable indicating seen activity.
       # New array type feature based on days_since_last_seen
       - entity_var:
-          name: last_seen_days_array
-          select: CASE WHEN uniform(0, 1, random()) > 0.99 THEN null ELSE TO_ARRAY({{user.Var("days_since_last_seen")}}) END
+          name: random_agg_event
+          select: CASE WHEN uniform(0, 1, random()) > 0.99 THEN null ELSE array_agg(Distinct EVENT) END
+          from: inputs/rsTracks
           description: Array type variable containing days since last seen 
       - entity_var:
           name: is_churned_7_days
