@@ -19,6 +19,11 @@ entities:
       - anonymous_id
       - email
       - cart_token
+  - name: session
+    id_stitcher: models/shopify_session_id_stitcher
+    id_types:
+      - session_main_id
+      - session_id
 id_types:
   - name: user_id
   - name: cart_token
@@ -36,3 +41,5 @@ id_types:
         regex: ".+@.+"
       - type: exclude
         value: "test@company.com"
+  - name: session_id
+  - name: session_main_id
