@@ -452,7 +452,12 @@ var_groups:
             enable_status: must_have
       - entity_var:
           name: session_length
-          select: TIMESTAMPDIFF(SECOND, {{session.Var("session_start_time")}}, {{session.Var("session_end_time")}})
+          select: |
+            {% if warehouse.DatabaseType() == 'bigquery' %}
+              TIMESTAMP_DIFF({{session.Var("session_end_time")}}, {{session.Var("session_start_time")}}, SECOND)
+            {% else %}
+              DATEDIFF(SECOND, {{session.Var("session_start_time")}}, {{session.Var("session_end_time")}})
+            {% endif %}
           materialization:
             enable_status: must_have
       - entity_var:
