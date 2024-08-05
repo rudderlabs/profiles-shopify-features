@@ -35,8 +35,14 @@ models:
         run_type: discrete
       single_sql: |
         {% with OrderCreated = this.DeRef("inputs/rsOrderCreated") %}
-          select t.value['sku'] as SKU,products,token,ANONYMOUS_ID,USER_ID,TIMESTAMP,order_number,cart_token
-            from (select * from {{OrderCreated}} ), table(flatten(parse_json(products))) t where products is not null
+          select {{get_value_from_array('product_info', 'sku')}} as SKU,products,token,ANONYMOUS_ID,USER_ID,order_number,cart_token,TIMESTAMP
+          {% if warehouse.DatabaseType() == "redshift" || warehouse.DatabaseType() == "bigquery" %}
+            from (select *, {{get_array_from_json('products')}} AS product_info  from {{OrderCreated}} ) where products is not null
+          {% elif warehouse.DatabaseType() == "databricks" %}
+            from (select *, products AS product_info  from {{OrderCreated}} ) where products is not null
+          {% else %}
+            from (select * from {{OrderCreated}} ), table({{get_array_from_json('products')}}) product_info where products is not null
+          {% endif %}
         {% endwith %}
       contract:
         is_optional: false
@@ -149,34 +155,37 @@ models:
         run_type: discrete
       single_sql: |
         {% with CartUpdate = this.DeRef("inputs/rsCartUpdate") %}
-        SELECT CAST(t.value['brand'] AS STRING) AS brand,
-            t.value['discounted_price'] AS discounted_price,
-            CAST(t.value['gift_card'] AS STRING) AS gift_card,
-            t.value['grams'] AS grams,
-            CAST(t.value['id'] AS STRING) AS id,
-            CAST(t.value['key'] AS STRING) AS KEY,
-            t.value['line_price'] AS line_price,
-            t.value['original_line_price'] AS original_line_price,
-            t.value['original_price'] AS original_price,
-            t.value['price'] AS price,
-            CAST(t.value['product_id'] AS STRING) AS product_id,
-            CAST(t.value['properties'] AS STRING) AS properties,
-            t.value['quantity'] AS quantity,
-            CAST(t.value['sku'] AS STRING) AS sku,
-            CAST(t.value['taxable'] AS STRING) AS taxable,
-            CAST(t.value['title'] AS STRING) AS title,
-            t.value['total_discount'] AS total_discount,
-            CAST(t.value['variant'] AS STRING) AS _VARIANT_,
-            products,
-            anonymous_id,timestamp, token
+        SELECT CAST({{get_value_from_array('product_info', 'brand')}} as {{warehouse.DataType("text")}}) AS brand,
+            {{get_value_from_array('product_info', 'discounted_price')}} AS discounted_price,
+            CAST({{get_value_from_array('product_info', 'gift_card')}} as {{warehouse.DataType("text")}}) AS gift_card,
+            {{get_value_from_array('product_info', 'grams')}} AS grams,
+            CAST({{get_value_from_array('product_info', 'id')}} as {{warehouse.DataType("text")}}) AS id,
+            CAST({{get_value_from_array('product_info', 'key')}} as {{warehouse.DataType("text")}}) AS KEY,
+            {{get_value_from_array('product_info', 'line_price')}} AS line_price,
+            {{get_value_from_array('product_info', 'original_line_price')}} AS original_line_price,
+            {{get_value_from_array('product_info', 'original_price')}} AS original_price,
+            {{get_value_from_array('product_info', 'price')}} AS price,
+            CAST({{get_value_from_array('product_info', 'product_id')}} as {{warehouse.DataType("text")}}) AS product_id,
+            CAST({{get_value_from_array('product_info', 'properties')}} as {{warehouse.DataType("text")}}) AS properties,
+            {{get_value_from_array('product_info', 'quantity')}} AS quantity,
+            CAST({{get_value_from_array('product_info', 'sku')}} as {{warehouse.DataType("text")}}) AS sku,
+            CAST({{get_value_from_array('product_info', 'taxable')}} as {{warehouse.DataType("text")}}) AS taxable,
+            CAST({{get_value_from_array('product_info', 'title')}} as {{warehouse.DataType("text")}}) AS title,
+            {{get_value_from_array('product_info', 'total_discount')}} AS total_discount,
+            CAST({{get_value_from_array('product_info', 'variant')}} as {{warehouse.DataType("text")}}) AS _VARIANT_, products, anonymous_id, token, timestamp
         FROM
         (SELECT *
         FROM
-            (SELECT *,
+            (SELECT *, {% if warehouse.DatabaseType() == "databricks" %} products as product_info, {% endif %}
                     row_number() over(PARTITION BY anonymous_id, token
                                                 ORDER BY timestamp DESC) AS rn
             FROM {{CartUpdate}} where products is not null)
-        WHERE rn = 1), table(flatten(parse_json(products))) t
+        WHERE rn = 1)
+        {% if warehouse.DatabaseType() == "redshift" || warehouse.DatabaseType() == "bigquery" %} 
+          ,(select {{get_array_from_json('products')}} AS product_info FROM {{CartUpdate}}) 
+        {% elif warehouse.DatabaseType() == "snowflake" %} 
+          ,table({{get_array_from_json('products')}}) product_info
+        {% endif %}
                 {% endwith %}
       ids:
         - select: "anonymous_id"
