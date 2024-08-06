@@ -74,10 +74,10 @@ inputs:
         - select: "anonymous_id"
           type: anonymous_id
           entity: user
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
+        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(CAST(context_session_id as {{warehouse.DataType('text')}}), 'null'))"
           type: session_id
           entity: user
-        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(to_char(context_session_id), 'null'))"
+        - select: "concat(coalesce(anonymous_id, 'null'), coalesce(CAST(context_session_id as {{warehouse.DataType('text')}}), 'null'))"
           type: session_id
           entity: session
   - name: rsOrderCreated

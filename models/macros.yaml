@@ -2,15 +2,62 @@ macros:
   - name: array_agg
     inputs:
       - column_name
-    value: "array_agg( distinct {{column_name}})"
+    value: "
+      {% if warehouse.DatabaseType() == \"redshift\" %}
+        listagg( distinct {{column_name}})
+      {% elif warehouse.DatabaseType() == \"bigquery\" %}
+        array_agg( distinct {{column_name}} IGNORE NULLS)
+      {% else %}
+        array_agg( distinct {{column_name}})
+      {% endif %}"
   - name: array_size
     inputs:
       - column_name
     value: "
       {% if warehouse.DatabaseType() == \"bigquery\" %}
-        array_length( {{column_name}} )
+        array_length( split({{column_name}}) )
+      {% elif warehouse.DatabaseType() == \"redshift\" %}
+        get_array_length( json_parse({{column_name}}) )
+      {% elif warehouse.DatabaseType() == \"databricks\" %}
+        size(from_json(get_json_object({{column_name}}, '$'), 'array<string>'))
       {% else %}
         array_size( parse_json({{column_name}}) )
       {% endif %}"
   - name: frame_clause
-    value: "frame_condition = 'rows between unbounded preceding and unbounded following'"
+    value: "rows between unbounded preceding and unbounded following"
+  - name: get_array_from_json
+    inputs:
+      - column_name
+    value: "
+      {% if warehouse.DatabaseType() == \"redshift\" %}
+        array_flatten(json_parse(nullif({{column_name}}, '')))
+      {% elif warehouse.DatabaseType() == \"databricks\" %}
+        flatten(from_json(nullif({{column_name}}, '')))
+      {% elif warehouse.DatabaseType() == \"bigquery\" %}
+        parse_json(nullif({{column_name}}, ''))
+      {% else %}
+        flatten(parse_json({{column_name}}))
+      {% endif %}"
+  - name: get_value_from_array
+    inputs:
+      - array
+      - key
+    value: "
+      {% if warehouse.DatabaseType() == \"redshift\" %}
+        {{array}}.{{key}}
+      {% elif warehouse.DatabaseType() == \"bigquery\" %}
+        json_value({{array}}, \"$.{{key}}\")
+      {% elif warehouse.DatabaseType() == \"databricks\" %}
+        get_json_object({{array}}, '$[0].{{key}}')
+      {% else %}
+        {{array}}.value['{{key}}']
+      {% endif %}"
+  - name: median_val
+    inputs:
+      - column_name
+    value: "
+      {% if warehouse.DatabaseType() == \"bigquery\" %}
+        APPROX_QUANTILES(CAST({{column_name}} AS {{warehouse.DataType(\"float\")}}), 2)[OFFSET(1)]
+      {% else %}
+        median(CAST({{column_name}} AS {{warehouse.DataType(\"float\")}}))
+      {% endif %}"

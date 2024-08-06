@@ -18,7 +18,7 @@ macros:
       - number_of_days
     value: "
       {% if warehouse.DatabaseType() == \"bigquery\" %}
-        {% if !(end_time|isnil) %} date_diff(date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'), date({{column}}), day) <={{number_of_days}}
+        {% if !(end_time|isnil) %} date_diff(date('{{end_time.Format(\"2006-01-02 15:04:05\")}}'), date({{column}}), day)
         {% else %} 
         date_diff(CURRENT_DATE(), date({{column}}), day){% endif %} <= {{number_of_days}}
       {% else %}
