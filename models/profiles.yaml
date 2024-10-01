@@ -2,7 +2,6 @@ models:
   - name: shopify_user_id_stitcher
     model_type: id_stitcher
     model_spec:
-      validity_time: 24h # 1 day
       entity_key: user
       edge_sources:
         - from: inputs/rsIdentifies
@@ -14,7 +13,6 @@ models:
   - name: shopify_session_id_stitcher
     model_type: id_stitcher
     model_spec:
-      validity_time: 24h # 1 day
       entity_key: session
       edge_sources:
         - from: inputs/rsPages
@@ -22,7 +20,6 @@ models:
   - name: shopify_user_features
     model_type: feature_table_model
     model_spec:
-      validity_time: 24h # 1 day
       entity_key: user
       features:
         - days_since_last_seen
@@ -81,7 +78,6 @@ models:
   - name: shopify_session_features
     model_type: feature_table_model
     model_spec:
-      validity_time: 24h # 1 day
       entity_key: session
       features:
         - session_end_time

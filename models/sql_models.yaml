@@ -2,7 +2,6 @@ models:
   - name: rsSessionTable
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete
@@ -29,7 +28,6 @@ models:
   - name: rsItemsPurchasedEverSku
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete
@@ -52,7 +50,6 @@ models:
   - name: rsItemsPurchasedEverCte
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete
@@ -69,7 +66,6 @@ models:
   - name: rsItemsPurchasedEver
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete
@@ -98,7 +94,6 @@ models:
   - name: rsOrderCreatedOrderCancelled
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete
@@ -149,7 +144,6 @@ models:
   - name: rsCartLineItems
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete
@@ -181,9 +175,9 @@ models:
                                                 ORDER BY timestamp DESC) AS rn
             FROM {{CartUpdate}} where products is not null)
         WHERE rn = 1)
-        {% if warehouse.DatabaseType() == "redshift" || warehouse.DatabaseType() == "bigquery" %} 
-          ,(select {{get_array_from_json('products')}} AS product_info FROM {{CartUpdate}}) 
-        {% elif warehouse.DatabaseType() == "snowflake" %} 
+        {% if warehouse.DatabaseType() == "redshift" || warehouse.DatabaseType() == "bigquery" %}
+          ,(select {{get_array_from_json('products')}} AS product_info FROM {{CartUpdate}})
+        {% elif warehouse.DatabaseType() == "snowflake" %}
           ,table({{get_array_from_json('products')}}) product_info
         {% endif %}
                 {% endwith %}
@@ -201,7 +195,6 @@ models:
   - name: rsLastCartStatus
     model_type: sql_template
     model_spec:
-      validity_time: 24h # 1 day
       materialization:
         output_type: ephemeral
         run_type: discrete

@@ -1,7 +1,7 @@
 # Project name
 name: shopify_features
 # Project's yaml schema version
-schema_version: 72
+schema_version: 80
 # WH Connection Profile to use.
 connection: shopify_wh
 # Model folders to use.
@@ -40,3 +40,4 @@ id_types:
         value: "test@company.com"
   - name: session_id
   - name: session_main_id
+retention_period: 720h0m0s
