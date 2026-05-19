@@ -1,17 +1,29 @@
 macros:
-  # cast_to_wide_float emits a warehouse-appropriate double-precision (64-bit)
-  # numeric cast. The shared `warehouse.DataType("float")` helper maps to
-  # 32-bit FLOAT on Databricks (Spark), which silently truncates aggregated
+  # cast_to_wide_float emits a warehouse-appropriate wide-precision numeric
+  # cast. The shared `warehouse.DataType("float")` helper maps to 32-bit
+  # FLOAT on Databricks (Spark), which silently truncates aggregated
   # currency values and produces cross-warehouse precision drift versus
-  # Snowflake / BigQuery / Redshift (where FLOAT is already 64-bit). Use this
-  # macro for any numeric aggregate (sum/avg/median/...) where precision
-  # matters.
+  # Snowflake / BigQuery / Redshift (where FLOAT is already 64-bit). Use
+  # this macro for any numeric aggregate (sum/avg/median/...) where
+  # precision matters.
+  #
+  # Note on the Databricks branch: the natural fix would be
+  # `CAST(.. AS DOUBLE)`, but PB's column-discovery layer parses the
+  # rendered SQL through an ANTLR Spark grammar that rejects `DOUBLE` (and
+  # `DOUBLE PRECISION`, `DECIMAL(p,s)`) as a CAST target -- it only
+  # accepts the bare-keyword types `FLOAT`, `BIGINT`, `INT`, `NUMERIC`
+  # and `NUMERIC(p,s)`. We therefore cast to `NUMERIC(38, 18)`, which
+  # Databricks/Spark treats as a synonym for `DECIMAL(38, 18)`
+  # (fixed-point, 38 total digits, 18 fractional). For currency
+  # aggregates this is strictly more precise than DOUBLE: no IEEE-754
+  # representation drift, no float-to-float widening, and 38 digits is
+  # well beyond any realistic per-user spend.
   - name: cast_to_wide_float
     inputs:
       - column_expr
     value: "
       {% if warehouse.DatabaseType() == \"databricks\" %}
-        CAST({{column_expr}} AS DOUBLE)
+        CAST({{column_expr}} AS NUMERIC(38, 18))
       {% else %}
         CAST({{column_expr}} AS {{warehouse.DataType(\"float\")}})
       {% endif %}"
