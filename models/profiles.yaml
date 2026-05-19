@@ -150,7 +150,7 @@ var_groups:
           description: It shows the average units purchased in each transaction. (Total units in each transaction/Total transactions). Includes only those transactions where the total price (from column current_total_price) is greater than zero. So, the feature exclude transactions with 100% off, replacement products etc that may result in the total_price being equal to zero.
       - entity_var:
           name: avg_transaction_value
-          select: avg( CAST(total_price_usd AS {{warehouse.DataType("float")}}) )
+          select: avg( {{cast_to_wide_float('total_price_usd')}} )
           from: inputs/rsOrderCreated
           description: Total price in each transaction/Total number of transactions.
       - entity_var:
@@ -180,7 +180,7 @@ var_groups:
           description: The total value of products that are part of the last transaction.
       - entity_var:
           name: total_refund
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}}) )
+          select: sum({{cast_to_wide_float('total_price_usd')}} )
           from: inputs/rsOrderCancelled
           where: financial_status in ('paid','refunded','partially_refunded')
           description: Total refund for a particular user to date.
@@ -192,13 +192,13 @@ var_groups:
           description: The total number of times an order has been cancelled by a user and has been refunded
       - entity_var:
           name: total_refund_in_past_1_days
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}}))
+          select: sum({{cast_to_wide_float('total_price_usd')}})
           from: inputs/rsOrderCancelled
           where: "{{macro_datediff_n('timestamp','1')}}"
           description: Total refund for a particular user in last 1 day
       - entity_var:
           name: total_refund_in_past_7_days
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}}))
+          select: sum({{cast_to_wide_float('total_price_usd')}})
           from: inputs/rsOrderCancelled
           where: "{{macro_datediff_n('timestamp','7')}}"
           description: Total refund for a particular user in last 1 day
@@ -379,7 +379,7 @@ var_groups:
           is_feature: false
       - entity_var:
           name: last_cart_value_in_dollars
-          select: sum(CAST(line_price AS {{warehouse.DataType("float")}}))
+          select: sum({{cast_to_wide_float('line_price')}})
           from: models/rsCartLineItems
           where: token={{user.Var("latest_cart_id")}}
           description: The value of products added in the latest cart.
@@ -408,30 +408,30 @@ var_groups:
           description: Number of transactions in last 365 day
       - entity_var:
           name: net_amt_spent_in_past_90_days
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}})) - coalesce(sum(CAST(total_price_usd_order_cancelled AS {{warehouse.DataType("float")}})), 0)
+          select: sum({{cast_to_wide_float('total_price_usd')}}) - coalesce(sum({{cast_to_wide_float('total_price_usd_order_cancelled')}}), 0)
           from: models/rsOrderCreatedOrderCancelled
           where: "{{macro_datediff_n('timestamp','90')}}"
           description: Net amount i.e. sales-refund spent by the user in last 90 days.
       - entity_var:
           name: net_amt_spent_in_past_365_days
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}})) - coalesce(sum(CAST(total_price_usd_order_cancelled AS {{warehouse.DataType("float")}})), 0)
+          select: sum({{cast_to_wide_float('total_price_usd')}}) - coalesce(sum({{cast_to_wide_float('total_price_usd_order_cancelled')}}), 0)
           from: models/rsOrderCreatedOrderCancelled
           where: "{{macro_datediff_n('timestamp','365')}}"
           description: Net amount i.e. sales-refund spent by the user in last 365 days.
       - entity_var:
           name: net_amt_spent_in_past_1_days
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}})) - coalesce(sum(CAST(total_price_usd_order_cancelled AS {{warehouse.DataType("float")}})), 0)
+          select: sum({{cast_to_wide_float('total_price_usd')}}) - coalesce(sum({{cast_to_wide_float('total_price_usd_order_cancelled')}}), 0)
           from: models/rsOrderCreatedOrderCancelled
           where: "{{macro_datediff_n('timestamp','1')}}"
           description: Net amount i.e. sales-refund spent by the user in last 1 day.
       - entity_var:
           name: net_amt_spent_in_past
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}})) - coalesce(sum(CAST(total_price_usd_order_cancelled AS {{warehouse.DataType("float")}})), 0)
+          select: sum({{cast_to_wide_float('total_price_usd')}}) - coalesce(sum({{cast_to_wide_float('total_price_usd_order_cancelled')}}), 0)
           from: models/rsOrderCreatedOrderCancelled
           description: Net amount i.e. sales-refund spent by the user to date.
       - entity_var:
           name: gross_amt_spent_in_past
-          select: sum(CAST(total_price_usd AS {{warehouse.DataType("float")}}))
+          select: sum({{cast_to_wide_float('total_price_usd')}})
           from: models/rsOrderCreatedOrderCancelled
           description: Total value of products purchased till date.
       - entity_var:

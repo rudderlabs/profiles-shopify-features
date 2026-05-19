@@ -58,6 +58,8 @@ macros:
     value: "
       {% if warehouse.DatabaseType() == \"bigquery\" %}
         APPROX_QUANTILES(CAST({{column_name}} AS {{warehouse.DataType(\"float\")}}), 2)[OFFSET(1)]
+      {% elif warehouse.DatabaseType() == \"databricks\" %}
+        median(CAST({{column_name}} AS DOUBLE))
       {% else %}
         median(CAST({{column_name}} AS {{warehouse.DataType(\"float\")}}))
       {% endif %}"

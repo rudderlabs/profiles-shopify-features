@@ -1,4 +1,20 @@
 macros:
+  # cast_to_wide_float emits a warehouse-appropriate double-precision (64-bit)
+  # numeric cast. The shared `warehouse.DataType("float")` helper maps to
+  # 32-bit FLOAT on Databricks (Spark), which silently truncates aggregated
+  # currency values and produces cross-warehouse precision drift versus
+  # Snowflake / BigQuery / Redshift (where FLOAT is already 64-bit). Use this
+  # macro for any numeric aggregate (sum/avg/median/...) where precision
+  # matters.
+  - name: cast_to_wide_float
+    inputs:
+      - column_expr
+    value: "
+      {% if warehouse.DatabaseType() == \"databricks\" %}
+        CAST({{column_expr}} AS DOUBLE)
+      {% else %}
+        CAST({{column_expr}} AS {{warehouse.DataType(\"float\")}})
+      {% endif %}"
   - name: macro_datediff
     inputs:
       - column
