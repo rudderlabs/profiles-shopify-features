@@ -15,7 +15,7 @@ macros:
       - column_name
     value: "
       {% if warehouse.DatabaseType() == \"bigquery\" %}
-        array_length( split({{column_name}}) )
+        array_length( json_query_array({{column_name}}) )
       {% elif warehouse.DatabaseType() == \"redshift\" %}
         get_array_length( json_parse({{column_name}}) )
       {% elif warehouse.DatabaseType() == \"databricks\" %}
