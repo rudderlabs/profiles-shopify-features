@@ -1,14 +1,20 @@
 macros:
+  # Element order must be deterministic: without an ORDER BY the warehouse is
+  # free to return aggregation elements in any order, which flips run-to-run.
   - name: array_agg
     inputs:
       - column_name
     value: "
       {% if warehouse.DatabaseType() == \"redshift\" %}
-        listagg( distinct {{column_name}})
+        listagg( distinct {{column_name}}) within group (order by {{column_name}})
       {% elif warehouse.DatabaseType() == \"bigquery\" %}
-        array_agg( distinct {{column_name}} IGNORE NULLS)
+        array_agg( distinct {{column_name}} IGNORE NULLS order by {{column_name}})
+      {% elif warehouse.DatabaseType() == \"databricks\" %}
+        sort_array(array_agg( distinct {{column_name}}))
+      {% elif warehouse.DatabaseType() == \"snowflake\" %}
+        array_agg( distinct {{column_name}}) within group (order by {{column_name}})
       {% else %}
-        array_agg( distinct {{column_name}})
+        array_agg( distinct {{column_name}} order by {{column_name}})
       {% endif %}"
   - name: array_size
     inputs:
